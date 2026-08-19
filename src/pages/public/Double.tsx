@@ -377,7 +377,7 @@ export default function Double() {
                     selectedColor === 'white' ? 'ring-2 ring-brand-500 shadow-[0_0_20px_rgba(255,255,255,0.2)]' : ''
                   } bg-white hover:bg-gray-100 text-[#1E2329]`}
                 >
-                  <span className="text-sm text-[#F12C4C]">x14</span>
+                  <span className="text-sm text-[#F12C4C]">x18</span>
                 </button>
                 <button 
                   onClick={() => setSelectedColor('black')}
