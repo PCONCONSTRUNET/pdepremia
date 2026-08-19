@@ -321,10 +321,10 @@ export default function Double() {
     <div className="min-h-screen bg-surface-950 pt-24 pb-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6">
           
-          {/* PAINEL DE APOSTAS (Esquerda) */}
-          <div className="lg:col-span-3 bg-[#1A1F24] border border-surface-800 rounded-2xl p-5 flex flex-col shadow-xl">
+          {/* PAINEL DE APOSTAS (Esquerda no Desktop, Embaixo no Mobile) */}
+          <div className="order-2 lg:order-1 lg:col-span-3 bg-[#1A1F24] border border-surface-800 rounded-2xl p-5 flex flex-col shadow-xl">
             
             {/* Abas */}
             <div className="flex bg-[#0F1317] p-1 rounded-xl mb-6 border border-surface-800">
@@ -377,7 +377,7 @@ export default function Double() {
                     selectedColor === 'white' ? 'ring-2 ring-brand-500 shadow-[0_0_20px_rgba(255,255,255,0.2)]' : ''
                   } bg-white hover:bg-gray-100 text-[#1E2329]`}
                 >
-                  <span className="text-sm text-[#F12C4C]">x18</span>
+                  <span className="text-sm text-[#F12C4C]">x14</span>
                 </button>
                 <button 
                   onClick={() => setSelectedColor('black')}
@@ -404,14 +404,37 @@ export default function Double() {
             </button>
           </div>
 
-          {/* ÁREA PRINCIPAL (Direita) */}
-          <div className="lg:col-span-9 flex flex-col gap-6">
+          {/* ÁREA PRINCIPAL (Direita no Desktop, No Topo no Mobile) */}
+          <div className="order-1 lg:order-2 lg:col-span-9 flex flex-col gap-6">
             
+            {/* Giros Anteriores (No topo no mobile, embaixo no desktop) */}
+            <div className="order-1 lg:order-2 bg-[#1A1F24] border border-surface-800 rounded-2xl p-3 flex items-center shadow-lg">
+              <span className="text-slate-500 text-[10px] font-semibold mr-3 whitespace-nowrap tracking-wider hidden lg:block">GIROS ANTERIORES</span>
+              <div className="flex gap-1.5 flex-1 justify-end overflow-hidden">
+                {history.slice(-15).map((item, idx) => (
+                  <button 
+                    key={idx} 
+                    onClick={() => setSelectedHistoryItem(item)}
+                    className={`shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-[10px] sm:text-xs hover:scale-110 transition-transform cursor-pointer overflow-hidden
+                      ${item.color === 'red' ? 'bg-[#F12C4C] text-white shadow-[inset_0_0_8px_rgba(0,0,0,0.2)]' : item.color === 'white' ? 'bg-transparent' : 'bg-[#2B3139] border border-surface-700 text-white shadow-[inset_0_0_8px_rgba(0,0,0,0.4)]'}`}
+                  >
+                    {item.color === 'white' ? <img src="/icone%20pedra%20branca.png" alt="W" className="w-full h-full object-cover scale-[1.2]" /> : item.number}
+                  </button>
+                ))}
+              </div>
+              <button 
+                onClick={() => setIsHistoryModalOpen(true)}
+                className="ml-3 p-1.5 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-400 hover:text-white transition-colors"
+              >
+                <History size={14} />
+              </button>
+            </div>
+
             {/* Box da Roleta */}
-            <div className="bg-[#1A1F24] border border-surface-800 rounded-2xl p-6 flex flex-col relative overflow-hidden h-[340px] justify-center items-center shadow-xl">
+            <div className="order-2 lg:order-1 bg-[#1A1F24] border border-surface-800 rounded-2xl p-6 flex flex-col relative overflow-hidden h-[300px] sm:h-[340px] justify-center items-center shadow-xl">
               
               <div className="absolute top-6 left-1/2 -translate-x-1/2 flex flex-col items-center">
-                <p className="text-white font-medium text-lg tracking-wide">
+                <p className="text-white font-medium text-base sm:text-lg tracking-wide">
                   {status === 'idle' ? 'Aguardando Aposta' : status === 'spinning' ? 'Girando...' : 'Resultado'}
                 </p>
                 {status === 'idle' && (
@@ -422,14 +445,14 @@ export default function Double() {
               </div>
 
               {/* ROULETTE MOCK */}
-              <div className="w-full overflow-hidden flex relative my-8 h-24 mask-image-linear">
+              <div className="w-full overflow-hidden flex relative my-8 h-20 sm:h-24 mask-image-linear">
                 {/* Linha do meio */}
                 <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-white z-20 -translate-x-1/2 shadow-[0_0_15px_rgba(255,255,255,1)]"></div>
                 
                 {/* Roleta Animada */}
-                <div className={`flex gap-4 absolute left-1/2 ${status !== 'idle' ? 'transition-transform' : 'transition-transform'}`} 
+                <div className={`flex gap-3 sm:gap-4 absolute left-1/2 ${status !== 'idle' ? 'transition-transform' : 'transition-transform'}`} 
                      style={{ 
-                       transform: `translateX(-${currentIndex * 112 + 48}px)`,
+                       transform: `translateX(-${currentIndex * (window.innerWidth < 640 ? 92 : 112) + (window.innerWidth < 640 ? 40 : 48)}px)`,
                        transitionDuration: status !== 'idle' ? `${spinDuration}ms` : '1000ms',
                        transitionTimingFunction: status !== 'idle' ? 'cubic-bezier(0.2, 0.6, 0.3, 1)' : 'cubic-bezier(0.4, 0, 0.2, 1)',
                        filter: status === 'spinning' ? 'blur(1px)' : 'blur(0)'
@@ -438,11 +461,11 @@ export default function Double() {
                     const isWhite = item.color === 'white'
                     const isRed = item.color === 'red'
                     return (
-                      <div key={i} className={`shrink-0 w-24 h-24 rounded-xl flex items-center justify-center overflow-hidden ${isWhite ? 'bg-transparent' : (isRed ? 'bg-[#F12C4C] border-b-4 border-black/20' : 'bg-[#2B3139] border-b-4 border-black/20')}`}>
+                      <div key={i} className={`shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-xl flex items-center justify-center overflow-hidden ${isWhite ? 'bg-transparent' : (isRed ? 'bg-[#F12C4C] border-b-4 border-black/20 shadow-[inset_0_0_15px_rgba(0,0,0,0.1)]' : 'bg-[#2B3139] border-b-4 border-black/20 shadow-[inset_0_0_15px_rgba(0,0,0,0.3)]')}`}>
                         {isWhite ? (
                           <img src="/icone%20pedra%20branca.png" alt="W" className="w-full h-full object-cover scale-[1.18]" />
                         ) : (
-                          <div className="w-14 h-14 rounded-full border-[3px] flex items-center justify-center font-bold text-lg border-white/90 text-white">
+                          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-[3px] flex items-center justify-center font-bold text-base sm:text-lg border-white/90 text-white shadow-sm">
                             {item.number}
                           </div>
                         )}
@@ -452,33 +475,10 @@ export default function Double() {
                 </div>
               </div>
 
-              <div className="absolute bottom-6 right-6 flex items-center gap-2 bg-[#0F1317] px-3 py-1.5 rounded-full border border-surface-800">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
-                <span className="text-emerald-500 text-xs font-semibold tracking-wider">Online</span>
+              <div className="absolute bottom-4 sm:bottom-6 right-4 sm:right-6 flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border border-surface-800 bg-[#0F1317]">
+                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
+                <span className="text-emerald-500 text-[10px] sm:text-xs font-semibold tracking-wider">Online</span>
               </div>
-            </div>
-
-            {/* Giros Anteriores */}
-            <div className="bg-[#1A1F24] border border-surface-800 rounded-2xl p-4 flex items-center shadow-lg">
-              <span className="text-slate-500 text-xs font-semibold mr-4 whitespace-nowrap tracking-wider hidden sm:block">GIROS ANTERIORES</span>
-              <div className="flex gap-2 flex-1 justify-end overflow-hidden">
-                {history.slice(-15).map((item, idx) => (
-                  <button 
-                    key={idx} 
-                    onClick={() => setSelectedHistoryItem(item)}
-                    className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs hover:scale-110 transition-transform cursor-pointer overflow-hidden
-                      ${item.color === 'red' ? 'bg-[#F12C4C] text-white' : item.color === 'white' ? 'bg-transparent' : 'bg-[#2B3139] border border-surface-700 text-white'}`}
-                  >
-                    {item.color === 'white' ? <img src="/icone%20pedra%20branca.png" alt="W" className="w-full h-full object-cover scale-[1.2]" /> : item.number}
-                  </button>
-                ))}
-              </div>
-              <button 
-                onClick={() => setIsHistoryModalOpen(true)}
-                className="ml-4 p-2 rounded-lg bg-surface-800 hover:bg-surface-700 text-slate-400 hover:text-white transition-colors"
-              >
-                <History size={16} />
-              </button>
             </div>
 
           </div>
