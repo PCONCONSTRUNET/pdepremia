@@ -26,6 +26,8 @@ export default function AdminSorteioForm() {
   const [endDate, setEndDate] = useState('')
   const [status, setStatus] = useState('draft')
   const [isPublic, setIsPublic] = useState(true)
+  const [bannerUrl, setBannerUrl] = useState('')
+  const [uploading, setUploading] = useState(false)
   
   // Prizes State
   const [prizesList, setPrizesList] = useState<{ id?: string, name: string }[]>([{ name: '' }])
@@ -48,10 +50,20 @@ export default function AdminSorteioForm() {
       setEndDate(data.end_date ? new Date(data.end_date).toISOString().slice(0, 16) : '')
       setStatus(data.status)
       setIsPublic(data.is_public ?? true)
+      setBannerUrl(data.banner_url || '')
       return data as Campaign
     },
     enabled: isEditing
   })
+
+  useEffect(() => {
+    if (!isEditing || (bannerUrl === '' || bannerUrl.startsWith('/sorteio '))) {
+      if (type === 'diario') setBannerUrl('/sorteio diario.png')
+      else if (type === 'semanal') setBannerUrl('/sorteio semanal.png')
+      else if (type === 'mensal') setBannerUrl('/sorteio mensal.png')
+      else if (bannerUrl.startsWith('/sorteio ')) setBannerUrl('')
+    }
+  }, [type, isEditing])
 
   const { data: prizes } = useQuery({
     queryKey: ['admin', 'campaign-prizes', id],
@@ -99,6 +111,31 @@ export default function AdminSorteioForm() {
     enabled: isEditing
   })
 
+  const handleUploadBanner = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploading(true)
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`
+      
+      const { error: uploadError } = await supabase.storage
+        .from('campaigns')
+        .upload(fileName, file, { upsert: true })
+        
+      if (uploadError) throw uploadError
+
+      const { data } = supabase.storage.from('campaigns').getPublicUrl(fileName)
+      setBannerUrl(data.publicUrl)
+      toast.success('Imagem carregada com sucesso!')
+    } catch (error: any) {
+      toast.error('Erro ao fazer upload da imagem: ' + error.message)
+    } finally {
+      setUploading(false)
+    }
+  }
+
   // Mutations
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -113,6 +150,7 @@ export default function AdminSorteioForm() {
         end_date: new Date(endDate).toISOString(),
         status,
         is_public: isPublic,
+        banner_url: bannerUrl || null,
         created_by: (await supabase.auth.getUser()).data.user?.id
       }
 
@@ -225,6 +263,41 @@ export default function AdminSorteioForm() {
         <Card className="space-y-4">
           <h2 className="text-white font-medium mb-4">Informações do Sorteio</h2>
           
+          <div>
+            <label className="block text-sm font-medium text-slate-400 mb-1.5">Foto de Capa (Banner)</label>
+            <div className="flex flex-col gap-3">
+              {bannerUrl && (
+                <div className="relative w-full h-32 rounded-xl overflow-hidden border border-surface-700">
+                  <img src={bannerUrl} alt="Banner" className="w-full h-full object-cover" />
+                </div>
+              )}
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  className="relative overflow-hidden"
+                  isLoading={uploading}
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleUploadBanner}
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                    disabled={uploading}
+                  />
+                  {uploading ? 'Enviando...' : 'Fazer Upload de Imagem'}
+                </Button>
+                <span className="text-sm text-slate-500">ou URL:</span>
+                <input 
+                  type="text" 
+                  value={bannerUrl} 
+                  onChange={(e) => setBannerUrl(e.target.value)} 
+                  className="input-dark flex-1" 
+                  placeholder="https://..." 
+                />
+              </div>
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-slate-400 mb-1.5">Nome / Título</label>
             <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="input-dark w-full" placeholder="Ex: Sorteio do iPhone" />

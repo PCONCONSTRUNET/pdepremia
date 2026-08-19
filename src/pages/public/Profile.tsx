@@ -21,6 +21,7 @@ export default function Profile() {
   const [orders, setOrders] = useState<any[]>([])
   const [loadingOrders, setLoadingOrders] = useState(true)
   const [walletTransactions, setWalletTransactions] = useState<any[]>([])
+  const [withdrawals, setWithdrawals] = useState<any[]>([])
   const [loadingWallet, setLoadingWallet] = useState(true)
   const [doubleBets, setDoubleBets] = useState<any[]>([])
   const [loadingGames, setLoadingGames] = useState(true)
@@ -194,12 +195,11 @@ export default function Profile() {
 
     setIsWithdrawing(true)
     try {
-      // Verifica o tempo do último saque
+      // Verifica tempo do último saque usando a nova tabela
       const { data: lastWithdrawal } = await supabase
-        .from('wallet_transactions')
+        .from('withdrawals')
         .select('created_at')
         .eq('user_id', profile!.id)
-        .eq('type', 'withdrawal')
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle()
@@ -217,19 +217,11 @@ export default function Profile() {
         }
       }
 
-      const { error: txError } = await supabase.from('wallet_transactions').insert({
-        user_id: profile!.id,
-        amount: -amount,
-        type: 'withdrawal',
-        status: 'pending' 
+      const { error: txError } = await supabase.rpc('request_withdrawal', {
+        p_amount: amount,
+        p_pix_key: pixKey
       })
       if (txError) throw txError
-
-      const newBalance = ((profile as any)?.balance || 0) - amount
-      const { error: updateError } = await supabase.from('profiles').update({
-        balance: newBalance
-      }).eq('id', profile!.id)
-      if (updateError) throw updateError
 
       toast.success('Solicitação de saque enviada com sucesso! Aguarde a aprovação.')
       setShowWithdrawModal(false)
@@ -391,6 +383,14 @@ export default function Profile() {
           .eq('user_id', profile.id)
           .order('created_at', { ascending: false })
         setWalletTransactions(data || [])
+        
+        const { data: withdrawalsData } = await supabase
+          .from('withdrawals')
+          .select('*')
+          .eq('user_id', profile.id)
+          .order('created_at', { ascending: false })
+        setWithdrawals(withdrawalsData || [])
+        
         setLoadingWallet(false)
       }
 
@@ -696,6 +696,37 @@ export default function Profile() {
                         </div>
                       )}
                     </div>
+                  </div>
+
+                  <div className="mt-8 border-t border-white/5 pt-8">
+                    <h3 className="text-lg font-bold text-white mb-4">Histórico de Saques</h3>
+                    {withdrawals.length === 0 ? (
+                      <p className="text-slate-400 text-sm text-center py-4">Nenhum saque solicitado ainda.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {withdrawals.map((w) => (
+                          <div key={w.id} className="bg-surface-900 border border-white/5 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div>
+                              <p className="text-white font-medium mb-1">{formatCurrency(w.amount)}</p>
+                              <div className="flex items-center gap-2 text-xs text-slate-400">
+                                <span>{format(new Date(w.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
+                                <span>•</span>
+                                <span className="uppercase">{w.pix_key}</span>
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end gap-2">
+                              {w.status === 'pending' && <span className="text-amber-400 bg-amber-400/10 px-2 py-1 rounded text-xs font-medium flex items-center gap-1"><Clock size={12}/> Pendente</span>}
+                              {w.status === 'approved' && <span className="text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded text-xs font-medium flex items-center gap-1"><CheckCircle2 size={12}/> Aprovado</span>}
+                              {w.status === 'rejected' && <span className="text-red-400 bg-red-400/10 px-2 py-1 rounded text-xs font-medium flex items-center gap-1"><XCircle size={12}/> Recusado</span>}
+                              
+                              {w.status === 'rejected' && w.admin_notes && (
+                                <p className="text-xs text-red-400 max-w-xs text-right mt-1">Motivo: {w.admin_notes}</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (

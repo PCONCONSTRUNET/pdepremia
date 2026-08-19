@@ -23,6 +23,7 @@ const OpenBox = lazy(() => import('@/pages/public/OpenBox'))
 const Boxes = lazy(() => import('@/pages/public/Boxes'))
 const Double = lazy(() => import('@/pages/public/Double'))
 const Sorteios = lazy(() => import('@/pages/public/Sorteios/index'))
+const Favoritos = lazy(() => import('@/pages/public/Favoritos'))
 
 // ─── Auth Pages ───────────────────────────────────────────────────────────────
 const Login = lazy(() => import('@/pages/public/Auth/Login'))
@@ -33,8 +34,8 @@ const ForgotPassword = lazy(() => import('@/pages/public/Auth/ForgotPassword'))
 const AdminLayout = lazy(() => import('@/pages/admin/AdminLayout'))
 const AdminDashboard = lazy(() => import('@/pages/admin/Dashboard'))
 
-const AdminOrders = lazy(() => import('@/pages/admin/Orders'))
 const AdminPayments = lazy(() => import('@/pages/admin/Payments'))
+const AdminWithdrawals = lazy(() => import('@/pages/admin/Withdrawals'))
 const AdminPrizes = lazy(() => import('@/pages/admin/Prizes'))
 const AdminWinners = lazy(() => import('@/pages/admin/Winners'))
 const AdminUsers = lazy(() => import('@/pages/admin/Users'))
@@ -86,6 +87,7 @@ const router = createBrowserRouter([
         element: <ProtectedRoute />,
         children: [
           { path: '/perfil', element: <Suspense fallback={<Fallback />}><Profile /></Suspense> },
+          { path: '/favoritos', element: <Suspense fallback={<Fallback />}><Favoritos /></Suspense> },
           { path: '/roleta-diaria', element: <Suspense fallback={<Fallback />}><DailyWheel /></Suspense> },
           { path: '/checkout/:orderId', element: <Suspense fallback={<Fallback />}><Checkout /></Suspense> },
           { path: '/abrir-box/:orderId', element: <Suspense fallback={<Fallback />}><OpenBox /></Suspense> },
@@ -105,8 +107,8 @@ const router = createBrowserRouter([
         children: [
           { path: '/admin', element: <Suspense fallback={<Fallback />}><AdminDashboard /></Suspense> },
 
-          { path: '/admin/pedidos', element: <Suspense fallback={<Fallback />}><AdminOrders /></Suspense> },
           { path: '/admin/pagamentos', element: <Suspense fallback={<Fallback />}><AdminPayments /></Suspense> },
+          { path: '/admin/saques', element: <Suspense fallback={<Fallback />}><AdminWithdrawals /></Suspense> },
           { path: '/admin/premios', element: <Suspense fallback={<Fallback />}><AdminPrizes /></Suspense> },
           { path: '/admin/ganhadores', element: <Suspense fallback={<Fallback />}><AdminWinners /></Suspense> },
           { path: '/admin/usuarios', element: <Suspense fallback={<Fallback />}><AdminUsers /></Suspense> },

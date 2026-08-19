@@ -418,7 +418,7 @@ export default function Double() {
                     className={`shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-[10px] sm:text-xs hover:scale-110 transition-transform cursor-pointer overflow-hidden
                       ${item.color === 'red' ? 'bg-[#F12C4C] text-white shadow-[inset_0_0_8px_rgba(0,0,0,0.2)]' : item.color === 'white' ? 'bg-white p-1 shadow-[inset_0_0_8px_rgba(0,0,0,0.1)]' : 'bg-[#2B3139] border border-surface-700 text-white shadow-[inset_0_0_8px_rgba(0,0,0,0.4)]'}`}
                   >
-                    {item.color === 'white' ? <img src="/icone%20pedra%20branca.png" alt="W" className="w-full h-full object-contain" /> : item.number}
+                    {item.color === 'white' ? <img src="/icone%20pedra%20branca.png" alt="W" className="w-full h-full object-cover scale-[1.3]" /> : item.number}
                   </button>
                 ))}
               </div>
@@ -431,24 +431,32 @@ export default function Double() {
             </div>
 
             {/* Box da Roleta */}
-            <div className="order-2 lg:order-1 bg-[#1A1F24] border border-surface-800 rounded-2xl p-6 flex flex-col relative overflow-hidden h-[300px] sm:h-[340px] justify-center items-center shadow-xl">
+            <div className="order-2 lg:order-1 bg-[#1A1F24] border border-surface-800 rounded-2xl p-4 flex flex-col relative overflow-hidden h-[220px] sm:h-[260px] justify-center items-center shadow-xl">
               
-              <div className="absolute top-6 left-0 right-0 px-8 sm:px-12 z-30">
-                <div className="w-full bg-[#F12C4C] rounded-md py-1.5 sm:py-2 flex items-center justify-center shadow-lg">
-                  {status === 'idle' ? (
-                    <span className="text-white font-medium text-xs sm:text-sm tracking-wide">
-                      Girando Em <span className="font-bold ml-1">{timeLeft}s</span>
-                    </span>
-                  ) : status === 'spinning' ? (
-                    <span className="text-white font-medium text-xs sm:text-sm tracking-wide">Girando...</span>
-                  ) : (
-                    <span className="text-white font-medium text-xs sm:text-sm tracking-wide">Resultado</span>
-                  )}
+              <div className="absolute top-4 left-0 right-0 px-8 sm:px-12 z-30">
+                <div className="w-full bg-surface-800/80 rounded-md py-1.5 sm:py-2 flex items-center justify-center shadow-lg relative overflow-hidden">
+                  <div 
+                    className="absolute top-0 left-0 bottom-0 bg-[#F12C4C] transition-all duration-1000 ease-linear"
+                    style={{ 
+                      width: status === 'idle' ? `${(timeLeft / 10) * 100}%` : '100%' 
+                    }}
+                  ></div>
+                  <div className="relative z-10 flex items-center justify-center">
+                    {status === 'idle' ? (
+                      <span className="text-white font-medium text-xs sm:text-sm tracking-wide">
+                        Girando Em <span className="font-bold ml-1">{timeLeft}s</span>
+                      </span>
+                    ) : status === 'spinning' ? (
+                      <span className="text-white font-medium text-xs sm:text-sm tracking-wide">Girando...</span>
+                    ) : (
+                      <span className="text-white font-medium text-xs sm:text-sm tracking-wide">Resultado</span>
+                    )}
+                  </div>
                 </div>
               </div>
 
               {/* ROULETTE MOCK */}
-              <div className="w-full overflow-hidden flex relative my-8 h-16 sm:h-24 mask-image-linear">
+              <div className="w-full overflow-hidden flex relative mt-8 mb-2 h-16 sm:h-24 mask-image-linear">
                 {/* Linha do meio */}
                 <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-white z-20 -translate-x-1/2 shadow-[0_0_15px_rgba(255,255,255,1)]"></div>
                 
@@ -457,8 +465,7 @@ export default function Double() {
                      style={{ 
                        transform: `translateX(-${currentIndex * (window.innerWidth < 640 ? 72 : 112) + (window.innerWidth < 640 ? 32 : 48)}px)`,
                        transitionDuration: status !== 'idle' ? `${spinDuration}ms` : '1000ms',
-                       transitionTimingFunction: status !== 'idle' ? 'cubic-bezier(0.2, 0.6, 0.3, 1)' : 'cubic-bezier(0.4, 0, 0.2, 1)',
-                       filter: status === 'spinning' ? 'blur(1px)' : 'blur(0)'
+                       transitionTimingFunction: status !== 'idle' ? 'cubic-bezier(0.2, 0.6, 0.3, 1)' : 'cubic-bezier(0.4, 0, 0.2, 1)'
                      }}>
                   {rouletteItems.map((item, i) => {
                     const isWhite = item.color === 'white'
@@ -466,7 +473,7 @@ export default function Double() {
                     return (
                       <div key={i} className={`shrink-0 w-16 h-16 sm:w-24 sm:h-24 rounded-xl flex items-center justify-center overflow-hidden ${isWhite ? 'bg-white border-b-4 border-black/10' : (isRed ? 'bg-[#F12C4C] border-b-4 border-black/20 shadow-[inset_0_0_15px_rgba(0,0,0,0.1)]' : 'bg-[#2B3139] border-b-4 border-black/20 shadow-[inset_0_0_15px_rgba(0,0,0,0.3)]')}`}>
                         {isWhite ? (
-                          <img src="/icone%20pedra%20branca.png" alt="W" className="w-3/4 h-3/4 object-contain" />
+                          <img src="/icone%20pedra%20branca.png" alt="W" className="w-full h-full object-cover scale-[1.4] translate-y-1" />
                         ) : (
                           <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full border-[3px] flex items-center justify-center font-bold text-sm sm:text-lg border-white/90 text-white shadow-sm">
                             {item.number}

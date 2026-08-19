@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { LoadingPage } from '@/components/common/Loading'
+import { ConfirmModal } from '@/components/ui/Modal'
 
 type PrizeType = 'balance' | 'empty' | 'physical'
 
@@ -43,6 +44,7 @@ export default function DailyWheelAdmin() {
   const [localConfig, setLocalConfig] = useState<DailyWheelConfig>(DEFAULT_CONFIG)
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingPrizeId, setEditingPrizeId] = useState<string | null>(null)
+  const [deletingPrizeId, setDeletingPrizeId] = useState<string | null>(null)
   
   // Form State
   const [formName, setFormName] = useState('')
@@ -75,10 +77,30 @@ export default function DailyWheelAdmin() {
 
   const saveMutation = useMutation({
     mutationFn: async (newConfig: DailyWheelConfig) => {
-      const { error } = await supabase
-        .from('system_settings')
-        .upsert({ key: 'daily_wheel_prizes', value: newConfig as any }, { onConflict: 'key' })
+      let data, error
+
+      if (configRecord?.id) {
+        const res = await supabase
+          .from('system_settings')
+          .update({ value: newConfig as any })
+          .eq('id', configRecord.id)
+          .select()
+        data = res.data
+        error = res.error
+      } else {
+        const res = await supabase
+          .from('system_settings')
+          .upsert({ key: 'daily_wheel_prizes', value: newConfig as any }, { onConflict: 'key' })
+          .select()
+        data = res.data
+        error = res.error
+      }
+
       if (error) throw error
+      if (!data || data.length === 0) {
+        throw new Error('Não foi possível salvar as alterações (verifique suas permissões).')
+      }
+      return data
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'system_settings', 'daily_wheel_prizes'] })
@@ -116,10 +138,15 @@ export default function DailyWheelAdmin() {
   }
 
   const handleDeletePrize = (id: string) => {
-    if (!confirm('Deseja realmente remover este prêmio?')) return
+    setDeletingPrizeId(id)
+  }
+
+  const confirmDeletePrize = () => {
+    if (!deletingPrizeId) return
     const updatedConfig = { ...localConfig }
-    updatedConfig[activeRank] = updatedConfig[activeRank].filter(p => p.id !== id)
+    updatedConfig[activeRank] = updatedConfig[activeRank].filter(p => p.id !== deletingPrizeId)
     setLocalConfig(updatedConfig)
+    setDeletingPrizeId(null)
   }
 
   const handleEditPrize = (prize: DailyWheelPrize) => {
@@ -352,6 +379,17 @@ export default function DailyWheelAdmin() {
           )}
         </div>
       </Card>
+
+      <ConfirmModal
+        isOpen={!!deletingPrizeId}
+        onClose={() => setDeletingPrizeId(null)}
+        onConfirm={confirmDeletePrize}
+        title="Remover Prêmio"
+        description="Tem certeza que deseja remover este prêmio da roleta? Você precisará salvar as alterações depois."
+        confirmLabel="Remover"
+        cancelLabel="Cancelar"
+        variant="danger"
+      />
     </div>
   )
 }

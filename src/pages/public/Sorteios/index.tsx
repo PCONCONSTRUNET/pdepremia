@@ -20,6 +20,7 @@ export default function PublicSorteios() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const [buyingCampaign, setBuyingCampaign] = useState<any>(null)
+  const [ticketQuantity, setTicketQuantity] = useState<number>(1)
 
   const { data: campaigns, isLoading } = useQuery({
     queryKey: ['public', 'sorteios', tab],
@@ -58,14 +59,15 @@ export default function PublicSorteios() {
   })
 
   const buyTicketMutation = useMutation({
-    mutationFn: async (campaign: any) => {
+    mutationFn: async ({ campaign, quantity }: { campaign: any, quantity: number }) => {
       if (!profile) throw new Error('Você precisa estar logado para participar')
-      if ((profile as any)?.balance < campaign.ticket_price) throw new Error('Saldo insuficiente')
+      const totalAmount = campaign.ticket_price * quantity
+      if ((profile as any)?.balance < totalAmount) throw new Error('Saldo insuficiente')
 
       // 1. Update user balance
-      const { error: balanceErr } = await (supabase as any).rpc('decrement_balance', { amount: campaign.ticket_price })
+      const { error: balanceErr } = await (supabase as any).rpc('decrement_balance', { amount: totalAmount })
       if (balanceErr) {
-        const { error: updErr } = await supabase.from('profiles').update({ balance: ((profile as any)?.balance || 0) - campaign.ticket_price }).eq('id', profile.id)
+        const { error: updErr } = await supabase.from('profiles').update({ balance: ((profile as any)?.balance || 0) - totalAmount }).eq('id', profile.id)
         if (updErr) throw new Error('Erro ao debitar saldo')
       }
 
@@ -73,9 +75,9 @@ export default function PublicSorteios() {
       const { data: order, error: orderErr } = await supabase.from('orders').insert({
         user_id: profile.id,
         campaign_id: campaign.id,
-        quantity: 1,
+        quantity: quantity,
         unit_price: campaign.ticket_price,
-        total_amount: campaign.ticket_price,
+        total_amount: totalAmount,
         status: 'paid',
         payment_method: 'wallet',
         tickets_generated: false
@@ -93,6 +95,7 @@ export default function PublicSorteios() {
       queryClient.invalidateQueries({ queryKey: ['public', 'user-tickets'] })
       queryClient.invalidateQueries({ queryKey: ['auth', 'profile'] })
       setBuyingCampaign(null)
+      setTicketQuantity(1)
     },
     onError: (err: any) => {
       toast.error(err.message || 'Erro ao participar do sorteio')
@@ -181,7 +184,22 @@ export default function PublicSorteios() {
                   <div className="relative h-full glass rounded-3xl overflow-hidden border border-white/10 hover:border-brand-500/50 transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(99,102,241,0.15)] flex flex-col">
                     
                     {/* Top Accent Line */}
-                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-500 via-purple-500 to-pink-500 opacity-70 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-500 via-purple-500 to-pink-500 opacity-70 group-hover:opacity-100 transition-opacity z-20" />
+
+                    {/* Cover Banner */}
+                    <div className="h-48 relative overflow-hidden bg-surface-900 flex items-center justify-center">
+                      {campaign.banner_url ? (
+                        <img 
+                          src={campaign.banner_url} 
+                          alt={campaign.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-brand-500/20 to-purple-500/20 flex items-center justify-center">
+                          <Gift size={48} className="text-brand-400/50" />
+                        </div>
+                      )}
+                    </div>
 
                     {/* Content */}
                     <div className="p-6 flex-1 flex flex-col relative z-10">
@@ -264,19 +282,33 @@ export default function PublicSorteios() {
                         )}
 
                         {(!hasParticipated && tab === 'finalizados') ? null : (
-                          <Button 
-                            className={`w-full h-12 text-base font-bold shadow-lg transition-all ${
-                              hasParticipated 
-                                ? 'bg-surface-800 text-white hover:bg-surface-700 border-surface-600' 
-                                : 'bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 text-white shadow-brand-500/25'
-                            }`}
-                            onClick={() => {
-                              if (hasParticipated) navigate('/meus-bilhetes')
-                              else setBuyingCampaign(campaign)
-                            }}
-                          >
-                            {hasParticipated ? 'Ver meus bilhetes' : `Participar por ${formatCurrency(campaign.ticket_price)}`}
-                          </Button>
+                          <div className="flex flex-col gap-2">
+                            <Button 
+                              className={`w-full h-12 text-base font-bold shadow-lg transition-all ${
+                                tab === 'finalizados'
+                                  ? 'bg-surface-800 text-white hover:bg-surface-700 border-surface-600' 
+                                  : 'bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 text-white shadow-brand-500/25'
+                              }`}
+                              onClick={() => {
+                                if (tab === 'finalizados') navigate('/meus-bilhetes')
+                                else {
+                                  setTicketQuantity(1)
+                                  setBuyingCampaign(campaign)
+                                }
+                              }}
+                            >
+                              {tab === 'finalizados' ? 'Ver meus bilhetes' : (hasParticipated ? 'Comprar Mais Bilhetes' : `Participar por ${formatCurrency(campaign.ticket_price)}`)}
+                            </Button>
+                            {hasParticipated && tab !== 'finalizados' && (
+                              <Button 
+                                variant="outline"
+                                className="w-full border-surface-600 text-slate-300 hover:bg-surface-800"
+                                onClick={() => navigate('/meus-bilhetes')}
+                              >
+                                Ver Meus Bilhetes
+                              </Button>
+                            )}
+                          </div>
                         )}
                       </div>
 
@@ -352,28 +384,52 @@ export default function PublicSorteios() {
                   
                   <div className="h-px bg-surface-800 w-full mb-3" />
                   
+                  <div className="flex justify-between items-center text-sm mb-4">
+                    <span className="text-slate-400">Quantidade de Bilhetes</span>
+                    <div className="flex items-center gap-3">
+                      <button 
+                        onClick={() => setTicketQuantity(Math.max(1, ticketQuantity - 1))}
+                        className="w-8 h-8 rounded-full bg-surface-800 flex items-center justify-center text-white hover:bg-surface-700"
+                      >-</button>
+                      <span className="font-bold text-lg w-4 text-center">{ticketQuantity}</span>
+                      <button 
+                        onClick={() => setTicketQuantity(ticketQuantity + 1)}
+                        className="w-8 h-8 rounded-full bg-surface-800 flex items-center justify-center text-white hover:bg-surface-700"
+                      >+</button>
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-surface-800 w-full mb-3" />
+
+                  <div className="flex justify-between items-center mb-3 text-sm mt-2">
+                    <span className="text-slate-400">Total a Pagar</span>
+                    <span className="text-brand-400 font-bold text-xl">{formatCurrency(buyingCampaign.ticket_price * ticketQuantity)}</span>
+                  </div>
+                  
+                  <div className="h-px bg-surface-800 w-full mb-3" />
+                  
                   <div className="flex justify-between items-center text-sm">
                     <div className="flex items-center gap-1.5 text-slate-400">
                       <Wallet size={14} />
                       <span>Saldo Atual</span>
                     </div>
-                    <span className={`font-medium ${((profile as any)?.balance || 0) >= buyingCampaign.ticket_price ? 'text-emerald-400' : 'text-red-400'}`}>
+                    <span className={`font-medium ${((profile as any)?.balance || 0) >= (buyingCampaign.ticket_price * ticketQuantity) ? 'text-emerald-400' : 'text-red-400'}`}>
                       {formatCurrency((profile as any)?.balance || 0)}
                     </span>
                   </div>
                 </div>
 
-                {((profile as any)?.balance || 0) < buyingCampaign.ticket_price && (
+                {((profile as any)?.balance || 0) < (buyingCampaign.ticket_price * ticketQuantity) && (
                   <div className="mb-6 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-start gap-2 text-left">
                     <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                    <span>Seu saldo é insuficiente para participar deste sorteio. Recarregue sua carteira.</span>
+                    <span>Seu saldo é insuficiente para esta quantidade de bilhetes. Recarregue sua carteira.</span>
                   </div>
                 )}
 
                 <Button
                   className="w-full h-14 text-lg font-bold shadow-lg shadow-brand-500/20"
-                  onClick={() => buyTicketMutation.mutate(buyingCampaign)}
-                  disabled={buyTicketMutation.isPending || ((profile as any)?.balance || 0) < buyingCampaign.ticket_price}
+                  onClick={() => buyTicketMutation.mutate({ campaign: buyingCampaign, quantity: ticketQuantity })}
+                  disabled={buyTicketMutation.isPending || ((profile as any)?.balance || 0) < (buyingCampaign.ticket_price * ticketQuantity)}
                   isLoading={buyTicketMutation.isPending}
                 >
                   Confirmar e Participar

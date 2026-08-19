@@ -13,8 +13,9 @@ function usePublicWinners() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('winners')
-        .select('*, box:boxes(name), prize:prizes(name, prize_type, reference_value)')
+        .select('*, box:boxes(name), prize:prizes!inner(name, prize_type, reference_value)')
         .eq('is_public', true)
+        .not('prize.name', 'ilike', '%tente novamente%')
         .order('won_at', { ascending: false })
         .limit(100)
       if (error) throw error

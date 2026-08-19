@@ -15,6 +15,8 @@ import { CardSkeleton } from '@/components/common/Loading'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import type { Winner } from '@/types'
+import { minigames } from '@/config/games'
+import { useFavorites } from '@/hooks/useFavorites'
 
 // ─── Data fetching ────────────────────────────────────────────────────────────
 
@@ -34,14 +36,32 @@ function usePublicBoxes() {
   })
 }
 
+function usePublicCampaigns() {
+  return useQuery({
+    queryKey: ['campaigns', 'public'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('campaigns')
+        .select('*')
+        .eq('is_public', true)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      return data
+    },
+  })
+}
+
 function usePublicWinners() {
   return useQuery({
     queryKey: ['winners', 'public'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('winners')
-        .select('*, campaign:campaigns(name), prize:prizes(name, prize_type)')
+        .select('*, campaign:campaigns(name), prize:prizes!inner(name, prize_type)')
         .eq('is_public', true)
+        .not('prize.name', 'ilike', '%tente novamente%')
         .order('won_at', { ascending: false })
         .limit(8)
 
@@ -121,45 +141,6 @@ function HeroSection() {
 // ─── Minigames Hub ─────────────────────────────────────────────────────────────
 
 function MinigamesSection() {
-  const minigames = [
-    {
-      id: 'double',
-      title: 'Double',
-      description: 'Multiplique suas chances neste jogo rápido e emocionante.',
-      icon: <Dices size={40} className="text-white drop-shadow-md" />,
-      theme: {
-        glow: 'bg-brand-500/30',
-        iconBg: 'bg-gradient-to-br from-brand-400 to-brand-600 shadow-[0_0_20px_rgba(99,116,241,0.4)]'
-      },
-      to: '/double',
-      isNew: true
-    },
-    {
-      id: 'roleta',
-      title: 'Roleta Diária',
-      description: 'Gire a sorte e ganhe prêmios instantâneos.',
-      icon: <img src="/roleta-p.png" alt="Roleta Diária" className="w-14 h-14 object-contain drop-shadow-lg group-hover:rotate-12 transition-transform duration-300" />,
-      theme: {
-        glow: 'bg-purple-500/30',
-        iconBg: 'bg-gradient-to-br from-purple-400 to-purple-600 shadow-[0_0_20px_rgba(168,85,247,0.4)]'
-      },
-      to: '/roleta-diaria',
-      isNew: false
-    },
-    {
-      id: 'boxes',
-      title: 'Boxes',
-      description: 'Abra caixas misteriosas recheadas de bilhetes e prêmios.',
-      icon: <img src="/boxes/box-epica.png" alt="Boxes" className="w-16 h-16 object-contain drop-shadow-xl group-hover:scale-110 transition-transform duration-300" />,
-      theme: {
-        glow: 'bg-gold-500/30',
-        iconBg: 'bg-gradient-to-br from-amber-400 to-yellow-300 shadow-[0_0_20px_rgba(245,158,11,0.4)]'
-      },
-      to: '/boxes',
-      isNew: false
-    }
-  ]
-
   return (
     <section className="py-16 sm:py-24 relative z-20 bg-surface-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -195,8 +176,22 @@ function MinigamesSection() {
 }
 
 function MinigameCardContent({ game }: { game: any }) {
+  const { isFavorite, toggleFavorite } = useFavorites()
+  const favorite = isFavorite(game.id)
+
   return (
-    <div className={`rounded-3xl overflow-hidden glass p-1 h-full hover:scale-[1.02] transition-transform duration-300`}>
+    <div className={`rounded-3xl overflow-hidden glass p-1 h-full hover:scale-[1.02] transition-transform duration-300 relative`}>
+      <button 
+        onClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          toggleFavorite(game.id)
+        }}
+        className="absolute top-4 left-4 z-30 p-2 rounded-full bg-surface-900/50 hover:bg-surface-800 transition-colors border border-white/5 shadow-lg backdrop-blur-sm"
+      >
+        <Star size={20} className={favorite ? 'fill-yellow-400 text-yellow-400' : 'text-slate-400'} />
+      </button>
+
       <div className="rounded-2xl p-8 h-full flex flex-col items-center text-center border border-white/5 bg-surface-800/80 relative overflow-hidden">
         {/* Glow Effects */}
         <div className={`absolute -top-24 -right-24 w-48 h-48 rounded-full blur-3xl ${game.theme.glow} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
@@ -357,6 +352,102 @@ function BoxesSection() {
   )
 }
 
+// ─── Campaigns Section ─────────────────────────────────────────────────────────
+
+function CampaignsSection() {
+  const { data: campaigns, isLoading } = usePublicCampaigns()
+  const navigate = useNavigate()
+
+  if (isLoading) {
+    return (
+      <section className="py-16 sm:py-24 bg-surface-950">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <CardSkeleton key={i} />
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  if (!campaigns || campaigns.length === 0) return null
+
+  return (
+    <section id="sorteios" className="py-16 sm:py-24 bg-surface-950 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-14">
+          <p className="text-brand-400 text-sm font-medium mb-2">🎟️ Participe e ganhe</p>
+          <h2 className="font-display font-bold text-white text-3xl sm:text-4xl">
+            Nossos Sorteios
+          </h2>
+          <p className="text-slate-400 mt-3 max-w-xl mx-auto">
+            Escolha um sorteio e concorra a prêmios incríveis!
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {campaigns.map((campaign, i) => {
+            return (
+              <motion.div
+                key={campaign.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.1 }}
+                className="rounded-3xl overflow-hidden glass p-1 group hover:scale-[1.02] transition-transform duration-300 flex flex-col h-full cursor-pointer"
+                onClick={() => navigate('/sorteios')}
+              >
+                <div className="rounded-2xl flex-1 flex flex-col bg-surface-800/80 relative overflow-hidden border border-white/5">
+                  <div className="h-48 relative overflow-hidden bg-surface-900 flex items-center justify-center">
+                    {campaign.banner_url ? (
+                      <img 
+                        src={campaign.banner_url} 
+                        alt={campaign.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-brand-500/20 to-purple-500/20 flex items-center justify-center">
+                        <Gift size={48} className="text-brand-400/50" />
+                      </div>
+                    )}
+                    <div className="absolute top-3 right-3">
+                      <span className="bg-emerald-500 text-white text-[10px] uppercase font-bold px-3 py-1.5 rounded-full shadow-lg">
+                        Ativo
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="p-6 flex-1 flex flex-col">
+                    <h3 className="font-display font-bold text-xl text-white mb-2 line-clamp-2">
+                      {campaign.name}
+                    </h3>
+                    <p className="text-sm text-slate-400 line-clamp-2 mb-6 flex-1">
+                      {campaign.description || 'Participe deste sorteio exclusivo e concorra a prêmios fantásticos.'}
+                    </p>
+                    
+                    <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                      <div>
+                        <p className="text-xs text-slate-500 mb-0.5">Valor do bilhete</p>
+                        <p className="font-display font-bold text-brand-400 text-lg">
+                          {formatCurrency(campaign.ticket_price)}
+                        </p>
+                      </div>
+                      <Button variant="primary" size="sm" className="px-6 rounded-xl group-hover:shadow-[0_0_15px_rgba(99,116,241,0.3)] transition-all">
+                        Participar
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )
+          })}
+        </div>
+      </div>
+    </section>
+  )
+}
 
 // ─── How it Works ─────────────────────────────────────────────────────────────
 
@@ -694,6 +785,7 @@ export default function Home() {
     <>
       <HeroSection />
       <MinigamesSection />
+      <CampaignsSection />
       <BoxesSection />
 
       <HowItWorksSection />

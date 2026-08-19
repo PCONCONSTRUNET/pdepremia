@@ -46,7 +46,7 @@ export function Sidebar() {
         width: isSidebarOpen ? 240 : 64,
       }}
       transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
-      className={`fixed left-0 top-[64px] bottom-0 z-30 bg-surface-950/80 backdrop-blur-xl border-r border-white/5 flex flex-col overflow-y-auto custom-scrollbar overflow-x-hidden`}
+      className={`fixed left-0 top-[64px] bottom-0 z-30 bg-surface-950/80 backdrop-blur-xl border-r border-white/5 flex flex-col overflow-y-auto custom-scrollbar overflow-x-hidden transition-transform duration-300 md:translate-x-0 ${!isSidebarOpen ? 'max-md:-translate-x-full' : 'max-md:translate-x-0 max-md:w-[240px]'}`}
     >
       <div className="flex-1 py-4 flex flex-col gap-6">
         {navItems.map((group, groupIdx) => {

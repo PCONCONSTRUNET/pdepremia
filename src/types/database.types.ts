@@ -1145,6 +1145,60 @@ export type Database = {
           },
         ]
       }
+      withdrawals: {
+        Row: {
+          id: string
+          user_id: string
+          amount: number
+          pix_key: string
+          status: string
+          admin_notes: string | null
+          processed_by: string | null
+          processed_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          amount: number
+          pix_key: string
+          status?: string
+          admin_notes?: string | null
+          processed_by?: string | null
+          processed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          amount?: number
+          pix_key?: string
+          status?: string
+          admin_notes?: string | null
+          processed_by?: string | null
+          processed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "withdrawals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "withdrawals_processed_by_fkey"
+            columns: ["processed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1165,6 +1219,18 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       open_box: { Args: { p_user_box_id: string }; Returns: Json }
       reveal_ticket: { Args: { ticket_uuid: string }; Returns: Json }
+      request_withdrawal: {
+        Args: { p_amount: number; p_pix_key: string }
+        Returns: string
+      }
+      approve_withdrawal: {
+        Args: { p_withdrawal_id: string }
+        Returns: undefined
+      }
+      reject_withdrawal: {
+        Args: { p_withdrawal_id: string; p_reason: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

@@ -79,7 +79,7 @@ export function Header() {
             {/* Menu Toggle */}
             <button 
               onClick={toggleSidebar}
-              className="p-2 -ml-2 text-slate-400 hover:text-white hover:bg-surface-800 rounded-lg transition-colors flex items-center justify-center mr-4"
+              className="hidden md:flex p-2 -ml-2 text-slate-400 hover:text-white hover:bg-surface-800 rounded-lg transition-colors items-center justify-center mr-4"
             >
               <Menu size={24} />
             </button>
