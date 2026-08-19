@@ -36,7 +36,7 @@ export default function Register() {
     const loginEmail = `${cleanPhone}@users.premiaja.com`
 
     // Pre-check for duplicate CPF or Phone
-    const { data: isDuplicate, error: rpcError } = await supabase.rpc('check_duplicate_user', {
+    const { data: isDuplicate, error: rpcError } = await (supabase as any).rpc('check_duplicate_user', {
       p_cpf: cleanCpf,
       p_phone: cleanPhone
     })

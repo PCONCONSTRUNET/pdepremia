@@ -60,12 +60,12 @@ export default function PublicSorteios() {
   const buyTicketMutation = useMutation({
     mutationFn: async (campaign: any) => {
       if (!profile) throw new Error('Você precisa estar logado para participar')
-      if (profile.balance < campaign.ticket_price) throw new Error('Saldo insuficiente')
+      if ((profile as any)?.balance < campaign.ticket_price) throw new Error('Saldo insuficiente')
 
       // 1. Update user balance
-      const { error: balanceErr } = await supabase.rpc('decrement_balance', { amount: campaign.ticket_price })
+      const { error: balanceErr } = await (supabase as any).rpc('decrement_balance', { amount: campaign.ticket_price })
       if (balanceErr) {
-        const { error: updErr } = await supabase.from('profiles').update({ balance: profile.balance - campaign.ticket_price }).eq('id', profile.id)
+        const { error: updErr } = await supabase.from('profiles').update({ balance: ((profile as any)?.balance || 0) - campaign.ticket_price }).eq('id', profile.id)
         if (updErr) throw new Error('Erro ao debitar saldo')
       }
 
@@ -357,13 +357,13 @@ export default function PublicSorteios() {
                       <Wallet size={14} />
                       <span>Saldo Atual</span>
                     </div>
-                    <span className={`font-medium ${profile?.balance >= buyingCampaign.ticket_price ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {formatCurrency(profile?.balance || 0)}
+                    <span className={`font-medium ${((profile as any)?.balance || 0) >= buyingCampaign.ticket_price ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {formatCurrency((profile as any)?.balance || 0)}
                     </span>
                   </div>
                 </div>
 
-                {profile?.balance < buyingCampaign.ticket_price && (
+                {((profile as any)?.balance || 0) < buyingCampaign.ticket_price && (
                   <div className="mb-6 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-start gap-2 text-left">
                     <AlertCircle size={16} className="shrink-0 mt-0.5" />
                     <span>Seu saldo é insuficiente para participar deste sorteio. Recarregue sua carteira.</span>
@@ -373,7 +373,7 @@ export default function PublicSorteios() {
                 <Button
                   className="w-full h-14 text-lg font-bold shadow-lg shadow-brand-500/20"
                   onClick={() => buyTicketMutation.mutate(buyingCampaign)}
-                  disabled={buyTicketMutation.isPending || profile?.balance < buyingCampaign.ticket_price}
+                  disabled={buyTicketMutation.isPending || ((profile as any)?.balance || 0) < buyingCampaign.ticket_price}
                   isLoading={buyTicketMutation.isPending}
                 >
                   Confirmar e Participar

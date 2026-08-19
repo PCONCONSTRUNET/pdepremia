@@ -28,8 +28,8 @@ function useAuditData() {
       if (wheelsError) throw wheelsError
 
       const combined = [
-        ...(boxes || []).map((b) => ({ ...b, type: 'box' as const })),
-        ...(wheels || []).map((w) => ({ ...w, type: 'wheel' as const })),
+        ...((boxes as any[]) || []).map((b) => ({ ...b, type: 'box' as const })),
+        ...((wheels as any[]) || []).map((w) => ({ ...w, type: 'wheel' as const })),
       ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
       return combined

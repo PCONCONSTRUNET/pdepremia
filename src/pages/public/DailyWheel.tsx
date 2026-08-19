@@ -75,7 +75,7 @@ export default function DailyWheel() {
     
     if (prize.type === 'balance' && prize.value > 0) {
       try {
-        const { error } = await supabase.rpc('add_user_balance', { amount: prize.value })
+        const { error } = await (supabase as any).rpc('add_user_balance', { amount: prize.value })
         if (error) throw error
         toast.success(`Parabéns! Você ganhou: R$ ${prize.value.toFixed(2)} na carteira!`)
       } catch (err) {
@@ -88,7 +88,7 @@ export default function DailyWheel() {
       toast.success(`Parabéns! Você ganhou: ${prize.name}`)
       // Save reward to user inventory
       try {
-        await supabase.rpc('add_user_reward', {
+        await (supabase as any).rpc('add_user_reward', {
           p_name: prize.name,
           p_category: prize.category || 'Geral',
           p_image_url: prize.imageUrl || null,

@@ -112,11 +112,11 @@ export default function Double() {
   useEffect(() => {
     const syncTime = async () => {
       const clientTimeBefore = Date.now()
-      const { data, error } = await supabase.rpc('get_server_time')
+      const { data, error } = await (supabase as any).rpc('get_server_time')
       if (!error && data) {
         const clientTimeAfter = Date.now()
         const latency = (clientTimeAfter - clientTimeBefore) / 2
-        const serverTimeMs = data * 1000
+        const serverTimeMs = (data as number) * 1000
         const offset = serverTimeMs - (clientTimeBefore + latency)
         setTimeOffset(offset)
         console.log(`⏱️ Relógio sincronizado com o servidor. Offset: ${offset}ms`)
@@ -129,14 +129,14 @@ export default function Double() {
     if (roundIdParam) {
       const fetchRound = async () => {
         try {
-          const { data, error } = await supabase.rpc('get_double_round_info', { p_round_id: parseInt(roundIdParam) })
+          const { data, error } = await (supabase as any).rpc('get_double_round_info', { p_round_id: parseInt(roundIdParam) })
           if (!error && data) {
             setSelectedHistoryItem({
-              color: data.result_color,
-              number: data.result_number === 0 ? 'W' : data.result_number,
-              timestamp: data.timestamp,
-              hash: data.hmac_hash,
-              roundId: data.round_id
+              color: (data as any).result_color,
+              number: (data as any).result_number === 0 ? 'W' : (data as any).result_number,
+              timestamp: (data as any).timestamp,
+              hash: (data as any).hmac_hash,
+              roundId: (data as any).round_id
             })
           }
         } catch (e) {
@@ -212,7 +212,7 @@ export default function Double() {
     const toastId = toast.loading('Processando aposta...')
 
     try {
-      const { data, error } = await supabase.rpc('place_double_bet', {
+      const { data, error } = await (supabase as any).rpc('place_double_bet', {
         p_bet_amount: amount,
         p_target_color: selectedColor
       })
@@ -247,12 +247,12 @@ export default function Double() {
 
     try {
       // Puxa o resultado criptográfico oficial da rodada
-      const { data, error } = await supabase.rpc('get_double_result', { p_round_id: targetRoundId })
+      const { data, error } = await (supabase as any).rpc('get_double_result', { p_round_id: targetRoundId })
       if (error) throw error
 
-      resultColor = data.result_color as ColorType
-      resultNumber = data.result_number
-      serverHash = data.hmac_hash
+      resultColor = (data as any).result_color as ColorType
+      resultNumber = (data as any).result_number
+      serverHash = (data as any).hmac_hash
     } catch (e) {
       console.error("Erro ao buscar resultado global:", e)
       // Fallback em caso de falha de rede para não travar a roleta

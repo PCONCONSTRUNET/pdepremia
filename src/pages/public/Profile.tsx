@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 import toast from 'react-hot-toast'
 import { maskPhone, maskCPF, maskCNPJ, formatCurrency } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { format, isFuture } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -15,6 +15,7 @@ import MyPrizes from './MyPrizes'
 
 export default function Profile() {
   const { profile, signOut } = useAuth()
+  const queryClient = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState<'dados' | 'transacoes' | 'saque' | 'documentos' | 'recompensas' | 'premios'>('dados')
   const [orders, setOrders] = useState<any[]>([])
@@ -52,7 +53,7 @@ export default function Profile() {
     queryKey: ['active_xp_reward', profile?.id],
     queryFn: async () => {
       const twoHoursAgo = new Date(Date.now() - 7200000).toISOString()
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('user_rewards')
         .select('*')
         .eq('user_id', profile?.id)
@@ -341,7 +342,7 @@ export default function Profile() {
     }
     setSavingPix(true)
     try {
-      const { error } = await supabase.from('profiles').update({
+      const { error } = await (supabase as any).from('profiles').update({
         full_name: fullName,
         cpf: cpf,
         pix_key_type: pixType,
@@ -404,7 +405,7 @@ export default function Profile() {
       }
 
       const fetchDoubleBets = async () => {
-        const { data } = await supabase
+        const { data } = await (supabase as any)
           .from('double_bets')
           .select('*')
           .eq('user_id', profile.id)
@@ -429,7 +430,7 @@ export default function Profile() {
     const to = from + GAMES_PER_PAGE - 1
     
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('double_bets')
         .select('*')
         .eq('user_id', profile.id)
@@ -1286,7 +1287,7 @@ export default function Profile() {
                   )}
 
                   {/* Dynamic Rewards from DB */}
-                  {userRewards?.map((reward) => (
+                  {userRewards?.map((reward: any) => (
                     <div key={reward.id} className="bg-surface-800 border border-surface-700 rounded-2xl overflow-hidden flex flex-col hover:border-surface-600 transition-colors">
                       <div className="p-5 flex gap-4 h-full">
                         {reward.image_url ? (
@@ -1331,7 +1332,7 @@ export default function Profile() {
                                   setIsXpActive(true)
                                   setXpTimeLeft(7200)
                                 }
-                                await supabase.rpc('claim_user_reward', { p_reward_id: reward.id })
+                                await (supabase as any).rpc('claim_user_reward', { p_reward_id: reward.id })
                                 toast.success(`${reward.name} reivindicado com sucesso!`)
                                 queryClient.invalidateQueries({ queryKey: ['active_xp_reward'] })
                                 refetchRewards()
