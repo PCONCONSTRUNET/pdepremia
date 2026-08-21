@@ -90,18 +90,27 @@ function BannerCarousel() {
   }, [banners.length])
 
   return (
-    <motion.img
-      key={currentIndex}
-      src={banners[currentIndex]}
-      alt="Banner Promoção"
-      draggable={false}
-      onContextMenu={(e) => e.preventDefault()}
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      transition={{ duration: 0.5 }}
-      className="w-full h-auto object-cover select-none pointer-events-none"
-    />
+    <div className="w-full relative flex items-center justify-center">
+      {banners.map((banner, index) => (
+        <motion.img
+          key={banner}
+          src={banner}
+          alt={`Banner Promoção ${index + 1}`}
+          draggable={false}
+          onContextMenu={(e) => e.preventDefault()}
+          initial={false}
+          animate={{ 
+            opacity: index === currentIndex ? 1 : 0,
+            x: index === currentIndex ? 0 : (index > currentIndex ? 20 : -20),
+            zIndex: index === currentIndex ? 10 : 0
+          }}
+          transition={{ duration: 0.6, ease: "easeInOut" }}
+          className={`w-full select-none pointer-events-none object-contain ${
+            index === currentIndex ? 'relative h-auto' : 'absolute top-0 left-0 h-full'
+          }`}
+        />
+      ))}
+    </div>
   )
 }
 
@@ -117,22 +126,39 @@ function HeroSection() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-gold-500/3 blur-3xl" />
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative">
-        {/* Promotional Banner Carousel */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="w-full relative rounded-3xl overflow-hidden shadow-2xl shadow-brand-500/10 border border-white/5 bg-surface-900"
-        >
-          <div className="absolute inset-0 bg-gradient-to-t from-surface-900 via-transparent to-transparent z-10 pointer-events-none" />
-          
-          <div className="relative w-full h-auto flex items-center justify-center overflow-hidden group">
-            <AnimatePresence mode="wait">
+      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 items-center">
+          {/* Promotional Banner Carousel */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="flex-1 relative rounded-3xl overflow-hidden shadow-2xl shadow-brand-500/10 border border-white/5 flex"
+          >
+            <div className="absolute inset-0 bg-gradient-to-t from-surface-900/50 via-transparent to-transparent z-10 pointer-events-none" />
+            
+            <div className="relative w-full h-auto flex items-center justify-center overflow-hidden group">
               <BannerCarousel />
-            </AnimatePresence>
-          </div>
-        </motion.div>
+            </div>
+          </motion.div>
+
+          {/* Telegram Card */}
+          <motion.a
+            href="https://t.me/pdepremia"
+            target="_blank"
+            rel="noopener noreferrer"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="w-full lg:w-[350px] shrink-0 block hover:scale-[1.02] transition-transform duration-300"
+          >
+            <img 
+              src="/card telegram.png" 
+              alt="Grupo Telegram" 
+              className="w-full h-auto object-contain drop-shadow-2xl"
+            />
+          </motion.a>
+        </div>
       </div>
     </section>
   )
@@ -352,6 +378,39 @@ function BoxesSection() {
   )
 }
 
+function CampaignCountdown({ endDate }: { endDate: string }) {
+  const [timeLeft, setTimeLeft] = useState('')
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const difference = new Date(endDate).getTime() - new Date().getTime()
+      if (difference <= 0) return 'Finalizado'
+
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24)
+      const minutes = Math.floor((difference / 1000 / 60) % 60)
+      const seconds = Math.floor((difference / 1000) % 60)
+
+      if (days > 0) return `${days}d ${hours}h ${minutes}m`
+      return `${hours}h ${minutes}m ${seconds}s`
+    }
+
+    setTimeLeft(calculateTimeLeft())
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft())
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [endDate])
+
+  return (
+    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-950/80 backdrop-blur-md border border-white/10 shadow-lg">
+      <Clock size={12} className="text-brand-400" />
+      <span className="text-white text-[10px] font-bold tabular-nums tracking-wider">{timeLeft}</span>
+    </div>
+  )
+}
+
 // ─── Campaigns Section ─────────────────────────────────────────────────────────
 
 function CampaignsSection() {
@@ -413,9 +472,13 @@ function CampaignsSection() {
                       </div>
                     )}
                     <div className="absolute top-3 right-3">
-                      <span className="bg-emerald-500 text-white text-[10px] uppercase font-bold px-3 py-1.5 rounded-full shadow-lg">
-                        Ativo
-                      </span>
+                      {campaign.end_date ? (
+                        <CampaignCountdown endDate={campaign.end_date} />
+                      ) : (
+                        <span className="bg-emerald-500 text-white text-[10px] uppercase font-bold px-3 py-1.5 rounded-full shadow-lg">
+                          Ativo
+                        </span>
+                      )}
                     </div>
                   </div>
                   
@@ -434,9 +497,14 @@ function CampaignsSection() {
                           {formatCurrency(campaign.ticket_price)}
                         </p>
                       </div>
-                      <Button variant="primary" size="sm" className="px-6 rounded-xl group-hover:shadow-[0_0_15px_rgba(99,116,241,0.3)] transition-all">
-                        Participar
-                      </Button>
+                      <div className="flex items-center gap-3">
+                        <span className="bg-emerald-500/20 text-emerald-400 text-[10px] uppercase font-bold px-3 py-1 rounded-full border border-emerald-500/20 hidden sm:inline-block">
+                          Ativo
+                        </span>
+                        <Button variant="primary" size="sm" className="px-6 rounded-xl group-hover:shadow-[0_0_15px_rgba(99,116,241,0.3)] transition-all">
+                          Participar
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>

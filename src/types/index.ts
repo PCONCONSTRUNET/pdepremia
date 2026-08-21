@@ -17,6 +17,8 @@ export type Winner = Database['public']['Tables']['winners']['Row']
 export type PrizeClaim = Database['public']['Tables']['prize_claims']['Row']
 export type AuditLog = Database['public']['Tables']['audit_logs']['Row']
 export type Notification = Database['public']['Tables']['notifications']['Row']
+export type SupportConversation = Database['public']['Tables']['support_conversations']['Row']
+export type SupportMessage = Database['public']['Tables']['support_messages']['Row']
 
 // Extended types with joins
 export type CampaignWithPrizes = Campaign & {

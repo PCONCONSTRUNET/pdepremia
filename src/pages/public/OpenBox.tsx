@@ -7,8 +7,10 @@ import toast from 'react-hot-toast'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
 import { LoadingPage } from '@/components/common/Loading'
+import { getPrizeImage } from '@/lib/utils'
 // @ts-ignore
 import ReactConfetti from 'react-confetti'
+import { useUIStore } from '@/store/uiStore'
 
 // Helper to shuffle array
 function shuffle<T>(array: T[]): T[] {
@@ -25,6 +27,12 @@ export default function OpenBox() {
   const { orderId } = useParams<{ orderId: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { setSpinningBox } = useUIStore()
+
+  // Reset global spin state on unmount just in case
+  useEffect(() => {
+    return () => setSpinningBox(false)
+  }, [])
 
   const [isSpinning, setIsSpinning] = useState(false)
   const [spinResult, setSpinResult] = useState<any>(null)
@@ -80,26 +88,30 @@ export default function OpenBox() {
     retry: false
   })
 
-  // Helper: weighted random selection based on drop_chance
-  // Common prizes (high drop_chance) appear more often in the visual strip
-  const weightedRandom = (prizes: any[]): any => {
-    const totalWeight = prizes.reduce((sum: number, p: any) => sum + (p.drop_chance ?? 10), 0)
-    let rand = Math.random() * totalWeight
-    for (const prize of prizes) {
-      rand -= (prize.drop_chance ?? 10)
-      if (rand <= 0) return prize
-    }
-    return prizes[prizes.length - 1]
-  }
-
-  // Prepare roulette items weighted by drop_chance
+  // Prepare roulette items with uniform distribution to maximize visual excitement
+  // We avoid putting the exact same prize twice in a row so it looks diverse
   useEffect(() => {
     if (userBox) {
       const availablePrizes = userBox.prizes?.length > 0
         ? userBox.prizes
         : [{ id: 'dummy', name: 'Prêmio Surpresa', image_url: null, drop_chance: 10 }]
 
-      const items = Array.from({ length: 50 }, () => ({ ...weightedRandom(availablePrizes) }))
+      const items = []
+      let lastPrizeId = null
+      
+      for (let i = 0; i < 50; i++) {
+        // Avoid consecutive duplicates if we have more than 1 prize option
+        const candidates = availablePrizes.length > 1 
+          ? availablePrizes.filter((p: any) => p.id !== lastPrizeId)
+          : availablePrizes
+          
+        const randomIndex = Math.floor(Math.random() * candidates.length)
+        const selected = candidates[randomIndex]
+        
+        items.push({ ...selected })
+        lastPrizeId = selected.id
+      }
+      
       setRouletteItems(items)
     }
   }, [userBox])
@@ -144,6 +156,7 @@ export default function OpenBox() {
     if (!userBox) return
     
     setIsSpinning(true)
+    setSpinningBox(true)
     try {
       // 1. Call RPC to get real result
       const { data, error } = await supabase.rpc('open_box', {
@@ -211,12 +224,14 @@ export default function OpenBox() {
       // 4. Wait for animation to finish (8s)
       setTimeout(() => {
         setShowCelebration(true)
+        setSpinningBox(false) // Resume balance animations after spin finishes
       }, 8500)
 
     } catch (err: any) {
       console.error(err)
       toast.error(err.message || 'Erro ao abrir a box')
       setIsSpinning(false)
+      setSpinningBox(false)
     }
   }
 
@@ -310,8 +325,8 @@ export default function OpenBox() {
                       {index === 40 && spinResult && (
                         <div className="absolute inset-0 bg-gold-500/20 animate-pulse" />
                       )}
-                      {item.image_url ? (
-                        <img src={item.image_url} className="w-20 h-20 object-contain mb-3 drop-shadow-md z-10" />
+                      {getPrizeImage(item) ? (
+                        <img src={getPrizeImage(item)} className="w-20 h-20 object-contain mb-3 drop-shadow-md z-10" />
                       ) : (
                         <Banknote size={40} className="text-emerald-400 mb-3 z-10" />
                       )}
@@ -351,11 +366,11 @@ export default function OpenBox() {
               
               <h2 className="text-gold-400 font-bold text-xl mb-6">VOCÊ GANHOU!</h2>
               
-              <div className="w-32 h-32 mx-auto bg-surface-800 rounded-full flex items-center justify-center border-4 border-gold-500/20 mb-6 shadow-[0_0_30px_rgba(234,179,8,0.2)]">
-                {spinResult.prize_image_url ? (
-                  <img src={spinResult.prize_image_url} className="w-20 h-20 object-contain" />
+              <div className="w-40 h-40 mx-auto flex items-center justify-center mb-6 drop-shadow-[0_0_30px_rgba(234,179,8,0.4)]">
+                {getPrizeImage({ image_url: spinResult.prize_image_url, name: spinResult.prize_name, prize_type: 'box', reference_value: spinResult.prize_value }) || getPrizeImage({ image_url: spinResult.prize_image_url, name: spinResult.prize_name, prize_type: 'double_spins' }) ? (
+                  <img src={getPrizeImage({ image_url: spinResult.prize_image_url, name: spinResult.prize_name, prize_type: 'box', reference_value: spinResult.prize_value }) || getPrizeImage({ image_url: spinResult.prize_image_url, name: spinResult.prize_name, prize_type: 'double_spins' }) as string} className="w-full h-full object-contain" />
                 ) : (
-                  <Banknote size={48} className="text-emerald-400" />
+                  <Banknote size={64} className="text-emerald-400" />
                 )}
               </div>
               
@@ -364,13 +379,15 @@ export default function OpenBox() {
                 <p className="text-emerald-400 font-medium mb-6">Valor: R$ {spinResult.prize_value.toFixed(2)}</p>
               )}
               
-              <Button 
-                variant="primary" 
-                className="w-full"
-                onClick={() => navigate('/meus-premios')}
-              >
-                Resgatar Prêmio
-              </Button>
+              <div className="flex justify-center">
+                <Button 
+                  variant="primary" 
+                  className="w-[75%] !rounded-full"
+                  onClick={() => navigate('/meus-premios')}
+                >
+                  Resgatar Prêmio
+                </Button>
+              </div>
             </motion.div>
           </motion.div>
         )}

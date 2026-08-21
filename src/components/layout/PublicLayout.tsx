@@ -4,6 +4,7 @@ import { Footer } from './Footer'
 import { Sidebar } from './Sidebar'
 import { MobileBottomNav } from './MobileBottomNav'
 import { useUIStore } from '@/store/uiStore'
+import { LiveChatWidget } from '@/components/support/LiveChatWidget'
 
 export function PublicLayout() {
   const { isSidebarOpen } = useUIStore()
@@ -21,6 +22,7 @@ export function PublicLayout() {
         </main>
       </div>
       <MobileBottomNav />
+      <LiveChatWidget />
     </div>
   )
 }

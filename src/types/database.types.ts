@@ -14,6 +14,67 @@ export type Database = {
   }
   public: {
     Tables: {
+      support_conversations: {
+        Row: {
+          id: string
+          user_id: string
+          status: string
+          last_message: string | null
+          last_message_at: string | null
+          unread_count: number
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          status?: string
+          last_message?: string | null
+          last_message_at?: string | null
+          unread_count?: number
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          status?: string
+          last_message?: string | null
+          last_message_at?: string | null
+          unread_count?: number
+          created_at?: string | null
+          updated_at?: string | null
+        }
+      }
+      support_messages: {
+        Row: {
+          id: string
+          conversation_id: string
+          sender_id: string | null
+          is_admin: boolean
+          message: string
+          is_read: boolean
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          conversation_id: string
+          sender_id?: string | null
+          is_admin?: boolean
+          message: string
+          is_read?: boolean
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          conversation_id?: string
+          sender_id?: string | null
+          is_admin?: boolean
+          message?: string
+          is_read?: boolean
+          created_at?: string | null
+        }
+      }
       audit_logs: {
         Row: {
           action: string

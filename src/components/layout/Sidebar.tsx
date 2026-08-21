@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { 
   Gift, TrendingUp, Target, History, Flame, 
-  Star, Gamepad2, PackageOpen, RotateCw, Ticket, Trophy
+  Star, Gamepad2, PackageOpen, RotateCw, Ticket, Trophy, Bomb
 } from 'lucide-react'
 import { useUIStore } from '@/store/uiStore'
 import { useAuth } from '@/hooks/useAuth'
@@ -17,6 +17,7 @@ export function Sidebar() {
       items: [
         { icon: History, label: 'Jogado Recentemente', to: '/perfil?tab=jogos', reqAuth: true },
         { icon: Flame, label: 'Double', to: '/double', reqAuth: false },
+        { icon: Bomb, label: 'Mines', to: '/mines', reqAuth: false },
         { icon: RotateCw, label: 'Roleta Diária', to: '/roleta-diaria', reqAuth: true },
         { icon: PackageOpen, label: 'Mystery Box', to: '/boxes', reqAuth: false },
         { icon: Ticket, label: 'Sorteios', to: '/sorteios', reqAuth: false },

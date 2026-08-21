@@ -22,6 +22,7 @@ const DailyWheel = lazy(() => import('@/pages/public/DailyWheel'))
 const OpenBox = lazy(() => import('@/pages/public/OpenBox'))
 const Boxes = lazy(() => import('@/pages/public/Boxes'))
 const Double = lazy(() => import('@/pages/public/Double'))
+const Mines = lazy(() => import('@/pages/public/Mines'))
 const Sorteios = lazy(() => import('@/pages/public/Sorteios/index'))
 const Favoritos = lazy(() => import('@/pages/public/Favoritos'))
 
@@ -42,6 +43,7 @@ const AdminUsers = lazy(() => import('@/pages/admin/Users'))
 const AdminUserDetail = lazy(() => import('@/pages/admin/UserDetail'))
 const AdminAuditLogs = lazy(() => import('@/pages/admin/AuditLogs'))
 const AdminSettings = lazy(() => import('@/pages/admin/Settings'))
+const AdminGateways = lazy(() => import('@/pages/admin/Gateways'))
 const AdminWheels = lazy(() => import('@/pages/admin/Wheels'))
 const AdminWheelForm = lazy(() => import('@/pages/admin/WheelForm'))
 const AdminBoxes = lazy(() => import('@/pages/admin/Boxes'))
@@ -49,6 +51,7 @@ const AdminRewards = lazy(() => import('@/pages/admin/Rewards'))
 const AdminDailyWheel = lazy(() => import('@/pages/admin/DailyWheelAdmin'))
 const AdminSorteios = lazy(() => import('@/pages/admin/Sorteios/index'))
 const AdminSorteioForm = lazy(() => import('@/pages/admin/Sorteios/Form'))
+const AdminSupport = lazy(() => import('@/pages/admin/Support'))
 
 function Fallback() {
   return <LoadingPage />
@@ -70,6 +73,7 @@ const router = createBrowserRouter([
 
       { path: '/boxes', element: <Suspense fallback={<Fallback />}><Boxes /></Suspense> },
       { path: '/double', element: <Suspense fallback={<Fallback />}><Double /></Suspense> },
+      { path: '/mines', element: <Suspense fallback={<Fallback />}><Mines /></Suspense> },
       { path: '/sorteios', element: <Suspense fallback={<Fallback />}><Sorteios /></Suspense> },
 
       // Auth routes (guests only)
@@ -115,12 +119,14 @@ const router = createBrowserRouter([
           { path: '/admin/usuarios/:id', element: <Suspense fallback={<Fallback />}><AdminUserDetail /></Suspense> },
           { path: '/admin/auditoria', element: <Suspense fallback={<Fallback />}><AdminAuditLogs /></Suspense> },
           { path: '/admin/configuracoes', element: <Suspense fallback={<Fallback />}><AdminSettings /></Suspense> },
+          { path: '/admin/gateways', element: <Suspense fallback={<Fallback />}><AdminGateways /></Suspense> },
           { path: '/admin/recompensas', element: <Suspense fallback={<Fallback />}><AdminRewards /></Suspense> },
           { path: '/admin/boxes', element: <Suspense fallback={<Fallback />}><AdminBoxes /></Suspense> },
           { path: '/admin/roleta-diaria', element: <Suspense fallback={<Fallback />}><AdminDailyWheel /></Suspense> },
           { path: '/admin/sorteios', element: <Suspense fallback={<Fallback />}><AdminSorteios /></Suspense> },
           { path: '/admin/sorteios/novo', element: <Suspense fallback={<Fallback />}><AdminSorteioForm /></Suspense> },
           { path: '/admin/sorteios/:id', element: <Suspense fallback={<Fallback />}><AdminSorteioForm /></Suspense> },
+          { path: '/admin/suporte', element: <Suspense fallback={<Fallback />}><AdminSupport /></Suspense> },
         ],
       },
     ],

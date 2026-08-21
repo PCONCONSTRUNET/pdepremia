@@ -1,1 +1,1 @@
-ALTER TABLE profiles ADD COLUMN rank text NOT NULL DEFAULT 'P Starter';
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS rank text NOT NULL DEFAULT 'P Starter';

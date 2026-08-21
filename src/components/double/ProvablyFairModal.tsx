@@ -97,19 +97,23 @@ export function ProvablyFairModal({ isOpen, onClose, item }: ProvablyFairModalPr
                   return (
                     <div
                       key={idx}
-                      className={`relative flex items-center justify-center rounded-xl transition-all ${
+                      className={`relative flex items-center justify-center rounded-xl transition-all overflow-hidden ${
                         isCenter ? 'w-20 h-20 z-0 shadow-lg' : 'w-16 h-16 opacity-50'
                       } ${
                         color === 'red' ? 'bg-[#F12C4C]' : color === 'white' ? 'bg-white' : 'bg-[#2B3139] border border-surface-700'
                       }`}
                     >
-                      <div className={`rounded-full border-4 flex items-center justify-center font-bold ${
-                        isCenter ? 'w-12 h-12 text-xl' : 'w-10 h-10 text-sm'
-                      } ${
-                        color === 'white' ? 'border-[#1A1F24] text-[#1A1F24]' : 'border-white text-white'
-                      }`}>
-                        {num === 0 ? 'W' : num}
-                      </div>
+                      {color === 'white' ? (
+                        <img src="/icone%20pedra%20branca.png" alt="W" className="w-full h-full object-cover scale-[1.4] translate-y-1" />
+                      ) : (
+                        <div className={`rounded-full border-4 flex items-center justify-center font-bold ${
+                          isCenter ? 'w-12 h-12 text-xl' : 'w-10 h-10 text-sm'
+                        } ${
+                          color === 'white' ? 'border-[#1A1F24] text-[#1A1F24]' : 'border-white text-white'
+                        }`}>
+                          {num}
+                        </div>
+                      )}
                     </div>
                   )
                 })}

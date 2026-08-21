@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase'
 import { formatCurrency } from '@/lib/utils'
 import { CardSkeleton } from '@/components/common/Loading'
 import { BoxPurchaseModal } from '@/components/boxes/BoxPurchaseModal'
+import { BoxPrizesPreviewModal } from '@/components/boxes/BoxPrizesPreviewModal'
 
 function usePublicBoxes() {
   return useQuery({
@@ -57,11 +58,17 @@ export default function BoxesPage() {
   const { data: boxes, isLoading } = usePublicBoxes()
   const navigate = useNavigate()
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
+  const [showPreviewModal, setShowPreviewModal] = useState(false)
   const [selectedBox, setSelectedBox] = useState<any>(null)
 
   const handleBuyClick = (box: any) => {
     setSelectedBox(box)
     setShowPurchaseModal(true)
+  }
+
+  const handlePreviewClick = (box: any) => {
+    setSelectedBox(box)
+    setShowPreviewModal(true)
   }
 
   if (isLoading) {
@@ -116,7 +123,10 @@ export default function BoxesPage() {
                   transition={{ duration: 0.4, delay: i * 0.1 }}
                   className="rounded-3xl overflow-hidden glass p-1 text-center group hover:scale-[1.02] transition-transform duration-300 flex flex-col h-full"
                 >
-                  <div className="rounded-2xl p-6 flex-1 flex flex-col border border-white/5 bg-surface-800/80 relative overflow-hidden">
+                  <div 
+                    onClick={() => handlePreviewClick(box)}
+                    className="rounded-2xl p-6 flex-1 flex flex-col border border-white/5 bg-surface-800/80 relative overflow-hidden cursor-pointer"
+                  >
                     <div className={`absolute inset-0 ${style.bg} opacity-20 group-hover:opacity-40 transition-opacity`} />
                     
                     <div className="flex justify-center mb-4 relative z-10">
@@ -152,8 +162,11 @@ export default function BoxesPage() {
                       </div>
 
                       <button
-                        className={`w-full py-3 rounded-xl text-base font-bold transition-all ${style.btn}`}
-                        onClick={() => handleBuyClick(box)}
+                        className={`w-full py-3 rounded-xl text-base font-bold transition-all ${style.btn} relative z-20`}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleBuyClick(box)
+                        }}
                       >
                         Comprar Box
                       </button>
@@ -164,16 +177,25 @@ export default function BoxesPage() {
             })}
           </div>
         )}
-
-        <BoxPurchaseModal 
-          isOpen={showPurchaseModal}
-          onClose={() => {
-            setShowPurchaseModal(false)
-            setSelectedBox(null)
-          }}
-          box={selectedBox}
-        />
       </div>
+
+      <BoxPurchaseModal 
+        isOpen={showPurchaseModal}
+        onClose={() => {
+          setShowPurchaseModal(false)
+          if (!showPreviewModal) setSelectedBox(null)
+        }}
+        box={selectedBox}
+      />
+
+      <BoxPrizesPreviewModal
+        isOpen={showPreviewModal}
+        onClose={() => {
+          setShowPreviewModal(false)
+          if (!showPurchaseModal) setSelectedBox(null)
+        }}
+        box={selectedBox}
+      />
     </div>
   )
 }

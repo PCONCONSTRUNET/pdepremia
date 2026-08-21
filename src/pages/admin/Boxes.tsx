@@ -261,7 +261,7 @@ function BoxPrizesModal({
 }) {
   const queryClient = useQueryClient()
   const [showAddForm, setShowAddForm] = useState(false)
-  const [newPrize, setNewPrize] = useState({ name: '', quantity: 1, reference_value: '', drop_chance: '10' })
+  const [newPrize, setNewPrize] = useState({ name: '', quantity: 1, reference_value: '', drop_chance: '10', prize_type: 'box', double_spins_count: '', double_spins_value: '' })
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [editingDropChance, setEditingDropChance] = useState<string | null>(null) // prize id being edited
   const [editDropValue, setEditDropValue] = useState<string>('')
@@ -274,7 +274,8 @@ function BoxPrizesModal({
         .from('prizes')
         .select('*')
         .eq('box_id', box!.id)
-        .eq('prize_type', 'box')
+        .eq('status', 'active')
+        .in('prize_type', ['box', 'double_spins'])
         .order('created_at', { ascending: false })
       if (error) throw error
       return data as Prize[]
@@ -284,23 +285,40 @@ function BoxPrizesModal({
   const addPrizeMutation = useMutation({
     mutationFn: async () => {
       if (!newPrize.name.trim()) throw new Error('Nome do prêmio é obrigatório')
-      const { error } = await supabase.from('prizes').insert({
+      const payload: any = {
         box_id: box!.id,
         name: newPrize.name.trim(),
-        prize_type: 'box',
-        quantity: newPrize.quantity,
-        remaining: newPrize.quantity,
+        prize_type: newPrize.prize_type,
+        quantity: 9999999,
+        remaining: 9999999,
         reference_value: newPrize.reference_value ? Number(newPrize.reference_value) : null,
         drop_chance: newPrize.drop_chance ? Number(newPrize.drop_chance) : 10,
         status: 'active',
         is_public: true,
-      })
+      }
+
+      if (payload.name.toLowerCase().includes('tente novamente')) {
+        payload.image_url = '/tente_novamente.png'
+      }
+
+      if (newPrize.prize_type === 'double_spins') {
+        const count = newPrize.double_spins_count ? Number(newPrize.double_spins_count) : 0
+        payload.double_spins_count = count
+        payload.double_spins_value = newPrize.double_spins_value ? Number(newPrize.double_spins_value) : 0
+        
+        if (count === 2) payload.image_url = '/2 rodadas gratis.png'
+        else if (count === 5) payload.image_url = '/5 rodadas gratis.png'
+        else if (count === 10) payload.image_url = '/10 rodadas gratis.png'
+        else if (count === 15) payload.image_url = '/15 rodadas gratis.png'
+      }
+
+      const { error } = await supabase.from('prizes').insert(payload)
       if (error) throw error
     },
     onSuccess: () => {
       toast.success('Prêmio adicionado!')
       queryClient.invalidateQueries({ queryKey: ['admin', 'box-prizes', box?.id] })
-      setNewPrize({ name: '', quantity: 1, reference_value: '', drop_chance: '10' })
+      setNewPrize({ name: '', quantity: 1, reference_value: '', drop_chance: '10', prize_type: 'box', double_spins_count: '', double_spins_value: '' })
       setShowAddForm(false)
     },
     onError: (e: Error) => toast.error(e.message || 'Erro ao adicionar prêmio'),
@@ -308,7 +326,8 @@ function BoxPrizesModal({
 
   const deletePrizeMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('prizes').delete().eq('id', id)
+      // Soft delete to prevent foreign key constraint errors
+      const { error } = await supabase.from('prizes').update({ status: 'cancelled' }).eq('id', id)
       if (error) throw error
     },
     onSuccess: () => {
@@ -383,14 +402,15 @@ function BoxPrizesModal({
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-slate-400 mb-1">Quantidade</label>
-                      <input
-                        type="number"
-                        min={1}
-                        className="input-dark w-full"
-                        value={newPrize.quantity}
-                        onChange={(e) => setNewPrize((p) => ({ ...p, quantity: Number(e.target.value) }))}
-                      />
+                      <label className="block text-xs text-slate-400 mb-1">Tipo de Prêmio</label>
+                      <select 
+                        className="input-dark w-full bg-[#1A1F24]"
+                        value={newPrize.prize_type}
+                        onChange={(e) => setNewPrize((p) => ({ ...p, prize_type: e.target.value }))}
+                      >
+                        <option value="box">Prêmio Físico/Dinheiro</option>
+                        <option value="double_spins">Giros Grátis (Double)</option>
+                      </select>
                     </div>
                     <div>
                       <label className="block text-xs text-slate-400 mb-1">Valor de Referência (R$)</label>
@@ -411,8 +431,8 @@ function BoxPrizesModal({
                       </label>
                       <input
                         type="number"
-                        step="0.1"
-                        min={0.1}
+                        step="0.001"
+                        min={0.001}
                         max={100}
                         className="input-dark w-full"
                         placeholder="10"
@@ -420,13 +440,40 @@ function BoxPrizesModal({
                         onChange={(e) => setNewPrize((p) => ({ ...p, drop_chance: e.target.value }))}
                       />
                     </div>
+                    {newPrize.prize_type === 'double_spins' && (
+                      <>
+                        <div>
+                          <label className="block text-xs text-slate-400 mb-1">Qtd. Giros</label>
+                          <input
+                            type="number"
+                            min={1}
+                            className="input-dark w-full"
+                            placeholder="5"
+                            value={newPrize.double_spins_count}
+                            onChange={(e) => setNewPrize((p) => ({ ...p, double_spins_count: e.target.value }))}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-slate-400 mb-1">R$ por Giro</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min={0}
+                            className="input-dark w-full"
+                            placeholder="2,00"
+                            value={newPrize.double_spins_value}
+                            onChange={(e) => setNewPrize((p) => ({ ...p, double_spins_value: e.target.value }))}
+                          />
+                        </div>
+                      </>
+                    )}
                   </div>
                   <div className="flex gap-2 pt-1">
                     <Button
                       variant="secondary"
                       size="sm"
                       className="flex-1"
-                      onClick={() => { setShowAddForm(false); setNewPrize({ name: '', quantity: 1, reference_value: '', drop_chance: '10' }) }}
+                      onClick={() => { setShowAddForm(false); setNewPrize({ name: '', quantity: 1, reference_value: '', drop_chance: '10', prize_type: 'box', double_spins_count: '', double_spins_value: '' }) }}
                     >
                       Cancelar
                     </Button>
@@ -468,9 +515,6 @@ function BoxPrizesModal({
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-white truncate">{prize.name}</p>
                     <div className="flex items-center gap-3 mt-0.5">
-                      <span className="text-xs text-slate-400">
-                        {prize.remaining}/{prize.quantity} restantes
-                      </span>
                       {prize.reference_value && (
                         <span className="text-xs text-emerald-400 font-medium">
                           R$ {prize.reference_value.toFixed(2)}

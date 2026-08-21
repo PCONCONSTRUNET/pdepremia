@@ -18,7 +18,7 @@ export function Footer() {
             <p className="text-slate-500 text-sm leading-relaxed mb-4">
               Plataforma de sorteios promocionais com premiações instantâneas e roletas transparentes.
             </p>
-            <div className="flex gap-3">
+            <div className="flex gap-3 mb-4">
               <a
                 href="https://www.instagram.com/pdepremia/"
                 target="_blank"
@@ -32,20 +32,7 @@ export function Footer() {
                   <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
                 </svg>
               </a>
-              <a
-                href="#"
-                className="w-9 h-9 rounded-xl bg-surface-700/50 border border-surface-600/50 flex items-center justify-center text-slate-400 hover:text-emerald-400 hover:border-emerald-500/30 transition-all"
-                aria-label="WhatsApp"
-              >
-                <MessageCircle size={16} />
-              </a>
-              <a
-                href="#"
-                className="w-9 h-9 rounded-xl bg-surface-700/50 border border-surface-600/50 flex items-center justify-center text-slate-400 hover:text-brand-400 hover:border-brand-500/30 transition-all"
-                aria-label="E-mail"
-              >
-                <Mail size={16} />
-              </a>
+
               <a
                 href="https://t.me/pdepremia"
                 target="_blank"
@@ -58,6 +45,14 @@ export function Footer() {
                 </svg>
               </a>
             </div>
+
+            <a 
+              href="mailto:pdepremiasup@proton.me" 
+              className="inline-flex items-center gap-2 text-slate-400 hover:text-brand-400 transition-colors text-sm font-medium bg-surface-800/30 px-3 py-1.5 rounded-lg border border-white/5"
+            >
+              <Mail size={16} />
+              <span>pdepremiasup@proton.me</span>
+            </a>
           </div>
 
           {/* Navegação */}
@@ -126,10 +121,17 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-white/5 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-slate-600 text-xs">
-            © {new Date().getFullYear()} P DE PREMIA. Todos os direitos reservados.
-          </p>
+        <div className="border-t border-white/5 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <img 
+              src="https://blaze.bet.br/images/footer/18plus.png" 
+              alt="+18" 
+              className="h-8 w-auto opacity-70 grayscale hover:grayscale-0 transition-all duration-300"
+            />
+            <p className="text-slate-600 text-xs text-center sm:text-left">
+              © {new Date().getFullYear()} P DE PREMIA. Todos os direitos reservados.
+            </p>
+          </div>
           <p className="text-slate-600 text-xs flex items-center gap-1">
             Plataforma segura e auditável
             <ExternalLink size={10} />

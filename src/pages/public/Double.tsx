@@ -21,6 +21,26 @@ type BetType = {
   avatar: string
 }
 
+function AnimatedAmount({ start, end, duration = 1500 }: { start: number, end: number, duration?: number }) {
+  const [value, setValue] = useState(start)
+
+  useEffect(() => {
+    let startTimestamp: number | null = null
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1)
+      const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress)
+      setValue(start + (end - start) * ease)
+      if (progress < 1) {
+        requestAnimationFrame(step)
+      }
+    }
+    requestAnimationFrame(step)
+  }, [start, end, duration])
+
+  return <>{value.toFixed(2)}</>
+}
+
 export default function Double() {
   const { profile } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -33,7 +53,16 @@ export default function Double() {
   const [selectedColor, setSelectedColor] = useState<ColorType | null>(null)
   const [activeBets, setActiveBets] = useState<{ amount: number, color: ColorType, user: string, avatar: string, finalAmount?: number }[]>([])
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
-  const [spinDuration, setSpinDuration] = useState(4800)
+  const [spinDuration, setSpinDuration] = useState(3800)
+  const [lastResultColor, setLastResultColor] = useState<ColorType | null>(null)
+  const [useFreeSpin, setUseFreeSpin] = useState(false)
+  
+  // Effect to lock bet amount when free spin is toggled
+  useEffect(() => {
+    if (useFreeSpin && profile) {
+      setBetAmount(Number((profile as any).double_free_spins_value || 0).toFixed(2))
+    }
+  }, [useFreeSpin, profile])
   
   // Roulette State
   const DOUBLE_SEQUENCE = [1, 14, 2, 13, 3, 12, 4, 0, 11, 5, 10, 6, 9, 7, 8]
@@ -150,9 +179,9 @@ export default function Double() {
   }, [])
 
   // Global Timer Loop
-  // Backend: 15s cycle, bets open for first 10s (phase 0–9), spin at phase 10–14
-  const ROUND_DURATION = 15  // must match backend: floor(now / 15)
-  const BET_OPEN_SECS  = 10  // must match backend: v_phase_time >= 10 → reject
+  // Backend: 19s cycle, bets open for first 15s (phase 0–14), spin at phase 15–18
+  const ROUND_DURATION = 19  // must match backend: floor(now / 19)
+  const BET_OPEN_SECS  = 15  // must match backend: v_phase_time >= 15 → reject
   const roundIdRef = useRef(0)
 
   useEffect(() => {
@@ -164,17 +193,25 @@ export default function Double() {
       // New Round Reset
       if (currentRoundId !== roundIdRef.current) {
         roundIdRef.current = currentRoundId
-        setStatus('idle')
-        setActiveBets([])
-        setCurrentIndex(22) // Reset wheel visually para o branco ('W')
       }
 
       if (phaseTime < BET_OPEN_SECS) {
-        // Betting phase: show countdown of remaining bet time
-        if (status === 'finished') setStatus('idle')
-        setTimeLeft(BET_OPEN_SECS - phaseTime)
+        // Betting phase
+        if (status === 'finished' && phaseTime <= 2.5) {
+          // Mantém o status finished para exibir o resultado por mais uns segundos
+        } else {
+          if (status === 'finished') {
+            setStatus('idle')
+            setActiveBets([])
+            setCurrentIndex(22)
+            setLastResultColor(null)
+          }
+          if (status === 'idle') {
+            setTimeLeft(BET_OPEN_SECS - phaseTime)
+          }
+        }
       } else if (phaseTime >= BET_OPEN_SECS && status === 'idle') {
-        // Spin phase (last 5 seconds)
+        // Spin phase
         setTimeLeft(0)
         handleSpin(currentRoundId)
       }
@@ -200,12 +237,16 @@ export default function Double() {
     }
     
     const currentBalance = Number(profile.balance || 0)
-    if (currentBalance < amount) {
+    if (!useFreeSpin && currentBalance < amount) {
       toast.error('Saldo insuficiente!')
       return
     }
     if (activeBets.some(b => b.color === selectedColor)) {
       toast.error('Você já apostou nesta cor!')
+      return
+    }
+    if (activeBets.length >= 2) {
+      toast.error('Você pode apostar em no máximo duas cores por rodada!')
       return
     }
 
@@ -214,7 +255,8 @@ export default function Double() {
     try {
       const { data, error } = await (supabase as any).rpc('place_double_bet', {
         p_bet_amount: amount,
-        p_target_color: selectedColor
+        p_target_color: selectedColor,
+        p_use_free_spin: useFreeSpin
       })
 
       if (error) throw error
@@ -226,9 +268,17 @@ export default function Double() {
         avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`
       }])
       
-      // Atualização visual instantânea do saldo deduzido
-      const newBalance = currentBalance - amount
-      useAuthStore.getState().setProfile({ ...profile, balance: newBalance })
+      // Atualização visual instantânea
+      if (useFreeSpin) {
+        useAuthStore.getState().setProfile({ 
+          ...profile, 
+          double_free_spins_count: Math.max(0, Number((profile as any).double_free_spins_count || 0) - 1) 
+        })
+        setUseFreeSpin(false) // Desativa após usar 1
+      } else {
+        const newBalance = currentBalance - amount
+        useAuthStore.getState().setProfile({ ...profile, balance: newBalance })
+      }
       
       toast.success('Aposta confirmada! Sorteio em breve.', { id: toastId })
     } catch (error: any) {
@@ -260,6 +310,8 @@ export default function Double() {
       resultNumber = rand
       resultColor = rand === 0 ? 'white' : rand <= 7 ? 'red' : 'black'
     }
+
+    setLastResultColor(resultColor)
 
     // Verifica se o usuário ativo ganhou em alguma das apostas
     if (activeBets.length > 0) {
@@ -310,7 +362,7 @@ export default function Double() {
           }
         }
         
-        // setActiveBets(updatedBets) // Não definimos aqui para evitar conflito com a limpeza do global loop
+        setActiveBets(updatedBets)
       }
       
       // O Reset total da mesa agora é feito automaticamente pelo Global Timer Loop quando entra a nova rodada
@@ -338,15 +390,31 @@ export default function Double() {
 
             {/* Input Quantia */}
             <div className="mb-6">
-              <label className="block text-slate-400 text-sm font-medium mb-2 px-1">Quantia</label>
+              <div className="flex justify-between items-center mb-2 px-1">
+                <label className="block text-slate-400 text-sm font-medium">Quantia</label>
+                {Number((profile as any)?.double_free_spins_count || 0) > 0 && (
+                  <button 
+                    onClick={() => setUseFreeSpin(!useFreeSpin)}
+                    className={`flex items-center gap-2 px-2 py-1 rounded transition-colors ${useFreeSpin ? 'bg-brand-500/20 border border-brand-500/50' : 'bg-surface-800 border border-surface-700 hover:bg-surface-700'}`}
+                  >
+                    <div className={`w-3 h-3 rounded-full flex items-center justify-center border ${useFreeSpin ? 'bg-brand-500 border-brand-500' : 'border-slate-500'}`}>
+                      {useFreeSpin && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                    </div>
+                    <span className={`text-xs font-medium ${useFreeSpin ? 'text-brand-400' : 'text-slate-400'}`}>
+                      Giro Grátis ({(profile as any).double_free_spins_count}x R$ {Number((profile as any).double_free_spins_value || 0).toFixed(2)})
+                    </span>
+                  </button>
+                )}
+              </div>
               <div className="relative flex items-center">
                 <span className="absolute left-4 text-white font-medium">R$</span>
                 <input
                   type="text"
                   value={betAmount}
                   onChange={handleAmountChange}
+                  disabled={useFreeSpin}
                   placeholder="0.00"
-                  className="w-full bg-[#0F1317] border border-surface-800 rounded-xl py-4 pl-[45px] pr-24 text-white focus:outline-none focus:border-brand-500 font-medium text-left"
+                  className={`w-full bg-[#0F1317] border border-surface-800 rounded-xl py-4 pl-[45px] pr-24 text-white font-medium text-left transition-colors focus:outline-none focus:border-brand-500 ${useFreeSpin ? 'opacity-70 cursor-not-allowed' : ''}`}
                 />
                 <div className="absolute right-2 flex items-center gap-1">
                   <button onClick={handleHalf} className="px-3 py-2 bg-[#2B3139] hover:bg-surface-600 rounded-lg text-xs text-white font-medium transition-colors border border-surface-700">
@@ -436,7 +504,7 @@ export default function Double() {
               <div className="absolute top-4 left-0 right-0 px-8 sm:px-12 z-30">
                 <div className="w-full bg-surface-800/80 rounded-md py-1.5 sm:py-2 flex items-center justify-center shadow-lg relative overflow-hidden">
                   <div 
-                    className="absolute top-0 left-0 bottom-0 bg-[#F12C4C] transition-all duration-1000 ease-linear"
+                    className="absolute top-0 left-0 bottom-0 bg-gold-500 transition-all duration-1000 ease-linear shadow-[0_0_15px_rgba(234,179,8,0.4)]"
                     style={{ 
                       width: status === 'idle' ? `${(timeLeft / 10) * 100}%` : '100%' 
                     }}
@@ -508,7 +576,9 @@ export default function Double() {
           <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
             
             {/* Coluna Vermelha */}
-            <div className="bg-[#0F1317] rounded-xl p-5 border border-surface-800">
+            <div className={`bg-[#0F1317] rounded-xl p-5 border transition-all duration-500 ${
+              status === 'finished' && lastResultColor !== 'red' ? 'opacity-40 border-surface-800' : 'opacity-100 border-surface-800'
+            }`}>
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-white font-medium text-lg">Vitória 2X</h3>
                 <div className="w-10 h-10 bg-[#F12C4C] rounded-xl flex items-center justify-center">
@@ -530,8 +600,10 @@ export default function Double() {
                       </div>
                       <span className="text-xs text-slate-400">{bet.user}</span>
                     </div>
-                    <span className={`text-sm font-bold ${bet.finalAmount !== undefined ? (bet.finalAmount > 0 ? 'text-emerald-400 drop-shadow-[0_0_5px_rgba(52,211,153,0.5)]' : 'text-slate-600 line-through') : 'text-white'}`}>
-                      R$ {bet.finalAmount !== undefined ? bet.finalAmount.toFixed(2) : bet.amount.toFixed(2)}
+                    <span className={`text-sm font-bold ${status === 'finished' && bet.finalAmount !== undefined ? (bet.finalAmount > 0 ? 'text-[#00e701]' : 'text-[#f12c4c]') : 'text-white'}`}>
+                      R$ {status === 'finished' && bet.finalAmount !== undefined 
+                           ? (bet.finalAmount > 0 ? <AnimatedAmount start={bet.amount} end={bet.finalAmount} /> : bet.amount.toFixed(2)) 
+                           : bet.amount.toFixed(2)}
                     </span>
                   </div>
                 ))}
@@ -539,7 +611,9 @@ export default function Double() {
             </div>
 
             {/* Coluna Branca */}
-            <div className="bg-[#0F1317] rounded-xl p-5 border border-surface-800">
+            <div className={`bg-[#0F1317] rounded-xl p-5 border transition-all duration-500 ${
+              status === 'finished' && lastResultColor !== 'white' ? 'opacity-40 border-surface-800' : 'opacity-100 border-surface-800'
+            }`}>
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-white font-medium text-lg">Vitória 18X</h3>
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden">
@@ -561,8 +635,10 @@ export default function Double() {
                       </div>
                       <span className="text-xs text-brand-300">{bet.user}</span>
                     </div>
-                    <span className={`text-sm font-bold ${bet.finalAmount !== undefined ? (bet.finalAmount > 0 ? 'text-emerald-400 drop-shadow-[0_0_5px_rgba(52,211,153,0.5)]' : 'text-slate-600 line-through') : 'text-white'}`}>
-                      R$ {bet.finalAmount !== undefined ? bet.finalAmount.toFixed(2) : bet.amount.toFixed(2)}
+                    <span className={`text-sm font-bold ${status === 'finished' && bet.finalAmount !== undefined ? (bet.finalAmount > 0 ? 'text-[#00e701]' : 'text-[#f12c4c]') : 'text-white'}`}>
+                      R$ {status === 'finished' && bet.finalAmount !== undefined 
+                           ? (bet.finalAmount > 0 ? <AnimatedAmount start={bet.amount} end={bet.finalAmount} /> : bet.amount.toFixed(2)) 
+                           : bet.amount.toFixed(2)}
                     </span>
                   </div>
                 ))}
@@ -570,7 +646,9 @@ export default function Double() {
             </div>
 
             {/* Coluna Preta */}
-            <div className="bg-[#0F1317] rounded-xl p-5 border border-surface-800">
+            <div className={`bg-[#0F1317] rounded-xl p-5 border transition-all duration-500 ${
+              status === 'finished' && lastResultColor !== 'black' ? 'opacity-40 border-surface-800' : 'opacity-100 border-surface-800'
+            }`}>
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-white font-medium text-lg">Vitória 2X</h3>
                 <div className="w-10 h-10 bg-[#2B3139] border border-surface-700 rounded-xl flex items-center justify-center">
@@ -592,8 +670,10 @@ export default function Double() {
                       </div>
                       <span className="text-xs text-slate-400">{bet.user}</span>
                     </div>
-                    <span className={`text-sm font-bold ${bet.finalAmount !== undefined ? (bet.finalAmount > 0 ? 'text-emerald-400 drop-shadow-[0_0_5px_rgba(52,211,153,0.5)]' : 'text-slate-600 line-through') : 'text-white'}`}>
-                      R$ {bet.finalAmount !== undefined ? bet.finalAmount.toFixed(2) : bet.amount.toFixed(2)}
+                    <span className={`text-sm font-bold ${status === 'finished' && bet.finalAmount !== undefined ? (bet.finalAmount > 0 ? 'text-[#00e701]' : 'text-[#f12c4c]') : 'text-white'}`}>
+                      R$ {status === 'finished' && bet.finalAmount !== undefined 
+                           ? (bet.finalAmount > 0 ? <AnimatedAmount start={bet.amount} end={bet.finalAmount} /> : bet.amount.toFixed(2)) 
+                           : bet.amount.toFixed(2)}
                     </span>
                   </div>
                 ))}

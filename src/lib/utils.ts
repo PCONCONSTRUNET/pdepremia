@@ -8,6 +8,38 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/** Get Prize Image (dynamically resolve missing image_url) */
+export function getPrizeImage(prize: any) {
+  if (prize?.image_url) return prize.image_url;
+  if (!prize?.name) return null;
+  
+  const name = prize.name.toLowerCase();
+  if (name.includes('tente novamente')) return '/tente_novamente.png';
+  
+  if (prize.prize_type === 'box' && prize.reference_value) {
+    const val = Number(prize.reference_value);
+    if (val === 1) return '/1 real.png';
+    if (val === 2) return '/2 real.png';
+    if (val === 5) return '/5 reais.png';
+    if (val === 10) return '/10 reais.png';
+    if (val === 15) return '/15 reais.png';
+    if (val === 20) return '/20 reais.png';
+    if (val === 30) return '/30 reais.png';
+    if (val === 50) return '/50 reais.png';
+    if (val === 100) return '/100 reais.png';
+    if (val === 200) return '/200 reais.png';
+  }
+  
+  if (prize.prize_type === 'double_spins') {
+    if (name.includes('2')) return '/2 rodadas gratis.png';
+    if (name.includes('5')) return '/5 rodadas gratis.png';
+    if (name.includes('10')) return '/10 rodadas gratis.png';
+    if (name.includes('15')) return '/15 rodadas gratis.png';
+  }
+  
+  return null;
+}
+
 /** Format currency to BRL */
 export function formatCurrency(value: number): string {
   return new Intl.NumberFormat('pt-BR', {

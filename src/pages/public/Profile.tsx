@@ -372,25 +372,56 @@ export default function Profile() {
           `)
           .eq('user_id', profile.id)
           .order('created_at', { ascending: false })
-        setOrders(data || [])
+          
+        const validOrders = (data || []).filter((o: any) => o.box_id || o.campaigns?.name || o.boxes?.name)
+        setOrders(validOrders)
         setLoadingOrders(false)
       }
 
       const fetchWalletTransactions = async () => {
-        const { data } = await supabase
+        const { data: wtData } = await supabase
           .from('wallet_transactions')
           .select('*')
           .eq('user_id', profile.id)
           .order('created_at', { ascending: false })
-        setWalletTransactions(data || [])
         
         const { data: withdrawalsData } = await supabase
           .from('withdrawals')
           .select('*')
           .eq('user_id', profile.id)
           .order('created_at', { ascending: false })
+          
+        const { data: ordersData } = await supabase
+          .from('orders')
+          .select('id')
+          .eq('user_id', profile.id)
+          
+        const orderIds = ordersData?.map(o => o.id) || []
+          
+        let paymentsData: any[] = []
+        if (orderIds.length > 0) {
+          const { data } = await supabase
+            .from('payments')
+            .select('id, amount, status, created_at')
+            .in('order_id', orderIds)
+            .order('created_at', { ascending: false })
+          if (data) paymentsData = data
+        }
+
+        const allowedWalletTypes = ['withdrawal', 'admin_bonus', 'promo_code']
+        const processedWT = (wtData || []).filter(tx => allowedWalletTypes.includes(tx.type))
+        const processedPayments = (paymentsData || []).map(p => ({
+          id: p.id,
+          type: 'deposit',
+          amount: p.amount,
+          status: p.status,
+          created_at: p.created_at
+        }))
+
+        const unifiedWallet = [...processedWT, ...processedPayments].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+        setWalletTransactions(unifiedWallet)
         setWithdrawals(withdrawalsData || [])
-        
         setLoadingWallet(false)
       }
 
@@ -450,16 +481,18 @@ export default function Profile() {
     }
   }
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status?: string) => {
+    if (!status || status === 'completed') return <span className="flex items-center gap-1 text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded text-xs font-medium"><CheckCircle2 size={12} /> Concluído</span>
     switch (status) {
       case 'paid':
-      case 'completed':
-        return <span className="flex items-center gap-1 text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded text-xs font-medium"><CheckCircle2 size={12} /> {status === 'completed' ? 'Concluído' : 'Aprovado'}</span>
+        return <span className="flex items-center gap-1 text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded text-xs font-medium"><CheckCircle2 size={12} /> Aprovado</span>
       case 'pending':
       case 'awaiting_payment':
         return <span className="flex items-center gap-1 text-amber-400 bg-amber-400/10 px-2 py-1 rounded text-xs font-medium"><Clock size={12} /> {status === 'pending' ? 'Pendente' : 'Aguardando'}</span>
-      default:
-        return <span className="flex items-center gap-1 text-red-400 bg-red-400/10 px-2 py-1 rounded text-xs font-medium"><XCircle size={12} /> Cancelado</span>
+      case 'cancelled':
+      case 'rejected':
+      case 'failed':
+        return <span className="flex items-center gap-1 text-red-500 bg-red-500/15 px-2 py-1 rounded text-xs font-bold"><XCircle size={12} /> Rejeitado</span>
     }
   }
 

@@ -41,28 +41,34 @@ export function Header() {
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false)
   const [isRankModalOpen, setIsRankModalOpen] = useState(false)
-  const { toggleSidebar } = useUIStore()
+  const { toggleSidebar, isSpinningBox } = useUIStore()
 
   // Balance Animation State
+  const [displayedBalance, setDisplayedBalance] = useState((profile as any)?.balance || 0)
   const previousBalanceRef = useRef((profile as any)?.balance || 0)
   const [balanceAnimations, setBalanceAnimations] = useState<{id: number, diff: number}[]>([])
 
+  // Sincroniza o saldo exibido, mas pausa durante o giro da Box
   useEffect(() => {
-    if (profile) {
-      const currentBalance = (profile as any).balance || 0
-      const prevBalance = previousBalanceRef.current
-      // Only animate if balance changed and prevBalance wasn't 0 (initial load)
-      if (currentBalance !== prevBalance && prevBalance !== 0) {
-        const diff = currentBalance - prevBalance
-        const id = Date.now()
-        setBalanceAnimations(prev => [...prev, { id, diff }])
-        setTimeout(() => {
-          setBalanceAnimations(prev => prev.filter(anim => anim.id !== id))
-        }, 2500)
-      }
-      previousBalanceRef.current = currentBalance
+    if (profile && !isSpinningBox) {
+      setDisplayedBalance((profile as any).balance || 0)
     }
-  }, [profile?.balance])
+  }, [profile?.balance, isSpinningBox])
+
+  useEffect(() => {
+    const currentBalance = displayedBalance
+    const prevBalance = previousBalanceRef.current
+    // Only animate if balance changed and prevBalance wasn't 0 (initial load)
+    if (currentBalance !== prevBalance && prevBalance !== 0) {
+      const diff = currentBalance - prevBalance
+      const id = Date.now()
+      setBalanceAnimations(prev => [...prev, { id, diff }])
+      setTimeout(() => {
+        setBalanceAnimations(prev => prev.filter(anim => anim.id !== id))
+      }, 2500)
+    }
+    previousBalanceRef.current = currentBalance
+  }, [displayedBalance])
 
   const handleSignOut = async () => {
     await signOut()
@@ -133,7 +139,7 @@ export function Header() {
                       <span className="text-[10px] uppercase tracking-wider text-slate-400 font-medium leading-none mb-1">Saldo</span>
                       <div className="relative">
                         <span className="text-sm font-bold text-emerald-400 leading-none">
-                          {formatCurrency((profile as any)?.balance || 0)}
+                          {formatCurrency(displayedBalance)}
                         </span>
                         
                         <AnimatePresence>
@@ -318,9 +324,9 @@ export function Header() {
                     {/* Wallet Mobile */}
                     <div className="flex items-center justify-between px-3 py-3 mb-2 bg-surface-700/30 rounded-xl border border-surface-600/50">
                       <div className="flex flex-col">
-                        <span className="text-[10px] uppercase tracking-wider text-slate-400 font-medium leading-none mb-1">Saldo em Carteira</span>
-                        <span className="text-base font-bold text-emerald-400 leading-none">
-                          {formatCurrency((profile as any)?.balance || 0)}
+                        <span className="text-xs text-slate-400 font-medium">Seu Saldo</span>
+                        <span className="text-emerald-400 font-bold tracking-tight">
+                          {formatCurrency(displayedBalance)}
                         </span>
                       </div>
                       <button 

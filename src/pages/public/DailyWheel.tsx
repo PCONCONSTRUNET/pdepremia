@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Clock } from 'lucide-react'
+import { ArrowLeft, Clock, Lock, Wallet } from 'lucide-react'
 import { HorizontalRoulette } from '@/components/box'
+import { DepositModal } from '@/components/wallet/DepositModal'
 import { addHours, isFuture } from 'date-fns'
 import toast from 'react-hot-toast'
 import { useQuery } from '@tanstack/react-query'
@@ -11,10 +12,11 @@ import { useAuth } from '@/hooks/useAuth'
 
 export default function DailyWheel() {
   const navigate = useNavigate()
-  const { profile } = useAuth()
+  const { profile, user } = useAuth()
   const [cooldownEnd, setCooldownEnd] = useState<Date | null>(null)
   const [timeRemaining, setTimeRemaining] = useState<string>('')
   const [isSpinning, setIsSpinning] = useState(false)
+  const [isDepositOpen, setIsDepositOpen] = useState(false)
 
   const userRank = profile?.rank || 'P Starter'
 
@@ -30,6 +32,27 @@ export default function DailyWheel() {
       if (error) throw error
       return data?.value as Record<string, any> || null
     }
+  })
+
+  // Verifica se o usuário tem depósito aprovado nos últimos 14 dias
+  const { data: hasRecentDeposit, isLoading: isCheckingDeposit } = useQuery({
+    queryKey: ['recent_deposit_check', user?.id],
+    queryFn: async () => {
+      if (!user) return false;
+      const fourteenDaysAgo = new Date();
+      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+      
+      const { count, error } = await supabase
+        .from('payments')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('status', 'approved')
+        .gte('created_at', fourteenDaysAgo.toISOString())
+      
+      if (error) throw error;
+      return (count || 0) > 0;
+    },
+    enabled: !!user
   })
 
   // Use config based on rank, or fallback
@@ -141,7 +164,7 @@ export default function DailyWheel() {
             transition={{ delay: 0.2 }}
             className="text-slate-400 max-w-xl mx-auto"
           >
-            Gire a roleta uma vez a cada 24 horas e concorra a prêmios incríveis, saldo extra, giros grátis e multiplicadores de XP baseados no seu rank!
+            A cada 24 horas, você receberá um giro grátis no giro diário, desde que sua conta tenha realizado depósitos nos últimos 14 dias. As recompensas obtidas no giro diário são determinadas pelo quão ativo você foi nas 24 horas.
           </motion.p>
         </div>
 
@@ -149,12 +172,35 @@ export default function DailyWheel() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.3 }}
-          className="bg-surface-900 border border-surface-800 p-8 lg:p-12 rounded-3xl shadow-2xl relative overflow-hidden flex flex-col items-center"
+          className="bg-surface-900 border border-surface-800 p-8 lg:p-12 rounded-3xl shadow-2xl relative overflow-hidden flex flex-col items-center min-h-[400px]"
         >
           {/* Decorative background glow */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-brand-500/5 rounded-full blur-[100px] pointer-events-none"></div>
 
-          {cooldownEnd ? (
+          {isCheckingDeposit ? (
+            <div className="absolute inset-0 z-30 bg-surface-900/80 backdrop-blur-sm flex items-center justify-center">
+              <span className="text-slate-400 font-medium animate-pulse">Verificando elegibilidade...</span>
+            </div>
+          ) : !hasRecentDeposit ? (
+            <div className="absolute inset-0 z-30 bg-surface-900/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
+              <div className="w-20 h-20 rounded-full bg-surface-800 border border-surface-700 flex items-center justify-center mb-6 shadow-xl relative">
+                <div className="absolute inset-0 bg-red-500/20 rounded-full animate-ping opacity-50"></div>
+                <Lock className="text-red-500 relative z-10" size={32} />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">Roleta Bloqueada</h2>
+              <p className="text-slate-400 max-w-md mb-8">
+                Para ter acesso aos giros grátis, é necessário ter realizado pelo menos um depósito nos últimos <strong className="text-white">14 dias</strong>. Sua roleta será reativada assim que um novo depósito for aprovado!
+              </p>
+              
+              <button
+                onClick={() => setIsDepositOpen(true)}
+                className="px-8 py-3.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold transition-all shadow-lg hover:-translate-y-1 flex items-center gap-2"
+              >
+                <Wallet size={18} />
+                Fazer Depósito Agora
+              </button>
+            </div>
+          ) : cooldownEnd ? (
             <div className="absolute inset-0 z-20 bg-surface-900/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
               <div className="w-20 h-20 rounded-full bg-surface-800 border border-surface-700 flex items-center justify-center mb-6 shadow-xl">
                 <Clock className="text-amber-500" size={32} />
@@ -222,6 +268,11 @@ export default function DailyWheel() {
           </div>
         </motion.div>
       </div>
+
+      <DepositModal 
+        isOpen={isDepositOpen} 
+        onClose={() => setIsDepositOpen(false)} 
+      />
     </div>
   )
 }

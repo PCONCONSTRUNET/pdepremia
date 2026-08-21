@@ -1,0 +1,1 @@
+ALTER TABLE public.support_conversations DROP CONSTRAINT IF EXISTS support_conversations_user_id_key;

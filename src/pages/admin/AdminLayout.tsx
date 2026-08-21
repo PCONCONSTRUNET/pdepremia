@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Megaphone, ShoppingCart, CreditCard, Ticket, Trophy,
   Package, Disc3, Users, ClipboardList, Settings, LogOut, Menu, X,
-  Star, ChevronRight, Gift, Shield, Wallet
+  Star, ChevronRight, Gift, Shield, Wallet, MessageSquare
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { getInitials } from '@/lib/utils'
@@ -21,7 +21,9 @@ const navItems = [
   { to: '/admin/roleta-diaria', label: 'Roleta Diária', icon: <Disc3 size={18} /> },
   { to: '/admin/boxes', label: 'Boxes', icon: <Package size={18} /> },
   { to: '/admin/usuarios', label: 'Usuários', icon: <Users size={18} /> },
+  { to: '/admin/suporte', label: 'Suporte', icon: <MessageSquare size={18} /> },
   { to: '/admin/auditoria', label: 'Auditoria', icon: <Shield size={18} /> },
+  { to: '/admin/gateways', label: 'Gateways', icon: <CreditCard size={18} /> },
   { to: '/admin/configuracoes', label: 'Configurações', icon: <Settings size={18} /> },
 ]
 

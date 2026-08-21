@@ -84,6 +84,8 @@ export default function MyPrizes() {
   const { data: rewards, isLoading: rewardsLoading } = useUserRewards()
   const { data: unopenedBoxes, isLoading: unopenedLoading } = useUnopenedBoxes()
   const [activeTab, setActiveTab] = useState<'campaigns' | 'rewards' | 'boxes'>('campaigns')
+  const [campaignPage, setCampaignPage] = useState(1)
+  const itemsPerPage = 10
 
   const groupedBoxes = unopenedBoxes?.reduce((acc: any, ubox: any) => {
     const boxId = ubox.box_definition_id;
@@ -163,7 +165,7 @@ export default function MyPrizes() {
             </div>
           ) : prizes && prizes.length > 0 ? (
             <div className="space-y-4">
-              {prizes.map((winner, i) => {
+              {prizes.slice((campaignPage - 1) * itemsPerPage, campaignPage * itemsPerPage).map((winner, i) => {
                 const claim = (winner as any).prize_claim
                 return (
                   <motion.div
@@ -221,6 +223,33 @@ export default function MyPrizes() {
                   </motion.div>
                 )
               })}
+              {prizes.length > itemsPerPage && (
+                <div className="flex items-center justify-between pt-4 pb-2 border-t border-surface-700/50 mt-4">
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setCampaignPage(p => Math.max(1, p - 1))
+                      window.scrollTo({ top: 0, behavior: 'smooth' })
+                    }}
+                    disabled={campaignPage === 1}
+                  >
+                    Anterior
+                  </Button>
+                  <span className="text-sm text-slate-400 font-medium">
+                    Página {campaignPage} de {Math.ceil(prizes.length / itemsPerPage)}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setCampaignPage(p => Math.min(Math.ceil(prizes.length / itemsPerPage), p + 1))
+                      window.scrollTo({ top: 0, behavior: 'smooth' })
+                    }}
+                    disabled={campaignPage === Math.ceil(prizes.length / itemsPerPage)}
+                  >
+                    Próxima
+                  </Button>
+                </div>
+              )}
             </div>
           ) : (
             <EmptyState

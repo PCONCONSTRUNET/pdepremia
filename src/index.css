@@ -250,3 +250,23 @@ body {
 .pb-safe {
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printable-receipt, #printable-receipt * {
+    visibility: visible;
+  }
+  #printable-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: white !important;
+    color: black !important;
+  }
+  .print-hide {
+    display: none !important;
+  }
+}
