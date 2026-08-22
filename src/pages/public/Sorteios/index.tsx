@@ -64,31 +64,13 @@ export default function PublicSorteios() {
       const totalAmount = campaign.ticket_price * quantity
       if ((profile as any)?.balance < totalAmount) throw new Error('Saldo insuficiente')
 
-      // 1. Update user balance
-      const { error: balanceErr } = await (supabase as any).rpc('decrement_balance', { amount: totalAmount })
-      if (balanceErr) {
-        const { error: updErr } = await supabase.from('profiles').update({ balance: ((profile as any)?.balance || 0) - totalAmount }).eq('id', profile.id)
-        if (updErr) throw new Error('Erro ao debitar saldo')
-      }
+      // Buy tickets securely via RPC
+      const { error: rpcErr } = await supabase.rpc('buy_campaign_tickets_with_wallet', { 
+        p_campaign_id: campaign.id,
+        p_quantity: quantity
+      })
 
-      // 2. Create Order
-      const { data: order, error: orderErr } = await supabase.from('orders').insert({
-        user_id: profile.id,
-        campaign_id: campaign.id,
-        quantity: quantity,
-        unit_price: campaign.ticket_price,
-        total_amount: totalAmount,
-        status: 'paid',
-        payment_method: 'wallet',
-        tickets_generated: false
-      }).select().single()
-
-      if (orderErr) throw orderErr
-
-      // 3. Generate Ticket via RPC
-      const { error: ticketErr } = await supabase.rpc('generate_tickets_for_order', { order_uuid: order.id })
-
-      if (ticketErr) throw ticketErr
+      if (rpcErr) throw rpcErr
     },
     onSuccess: () => {
       toast.success('Participação confirmada com sucesso!')
@@ -187,7 +169,7 @@ export default function PublicSorteios() {
                     <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-500 via-purple-500 to-pink-500 opacity-70 group-hover:opacity-100 transition-opacity z-20" />
 
                     {/* Cover Banner */}
-                    <div className="h-48 relative overflow-hidden bg-surface-900 flex items-center justify-center">
+                    <div className="h-32 sm:h-48 relative overflow-hidden bg-surface-900 flex items-center justify-center">
                       {campaign.banner_url ? (
                         <img 
                           src={campaign.banner_url} 
@@ -196,16 +178,16 @@ export default function PublicSorteios() {
                         />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-brand-500/20 to-purple-500/20 flex items-center justify-center">
-                          <Gift size={48} className="text-brand-400/50" />
+                          <Gift size={40} className="text-brand-400/50 sm:w-12 sm:h-12" />
                         </div>
                       )}
                     </div>
 
                     {/* Content */}
-                    <div className="p-6 flex-1 flex flex-col relative z-10">
+                    <div className="p-4 sm:p-6 flex-1 flex flex-col relative z-10">
                       
                       {/* Header */}
-                      <div className="flex justify-between items-start mb-6">
+                      <div className="flex justify-between items-start mb-4 sm:mb-6">
                         <div className="px-3 py-1 rounded-lg bg-surface-800/80 border border-white/5 text-xs font-bold text-slate-300 backdrop-blur-md uppercase tracking-wider">
                           {typeLabel}
                         </div>
@@ -218,15 +200,15 @@ export default function PublicSorteios() {
                       </div>
 
                       {/* Prize List */}
-                      <div className="flex-1 flex flex-col items-center text-center mb-6">
-                        <div className="w-16 h-16 mb-4 rounded-2xl bg-gradient-to-br from-brand-400/20 to-purple-500/20 flex items-center justify-center border border-white/5 group-hover:scale-110 transition-transform duration-500">
+                      <div className="flex-1 flex flex-col items-center text-center mb-4 sm:mb-6">
+                        <div className="w-12 h-12 sm:w-16 sm:h-16 mb-3 sm:mb-4 rounded-2xl bg-gradient-to-br from-brand-400/20 to-purple-500/20 flex items-center justify-center border border-white/5 group-hover:scale-110 transition-transform duration-500">
                           {mainPrize?.image_url ? (
-                            <img src={mainPrize.image_url} alt={mainPrize.name} className="w-10 h-10 object-contain" />
+                            <img src={mainPrize.image_url} alt={mainPrize.name} className="w-8 h-8 sm:w-10 sm:h-10 object-contain" />
                           ) : (
-                            <Trophy size={28} className="text-brand-400" />
+                            <Trophy size={24} className="text-brand-400 sm:w-7 sm:h-7" />
                           )}
                         </div>
-                        <h3 className="text-2xl font-display font-bold text-white leading-tight mb-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-brand-300 group-hover:to-purple-300 transition-colors">
+                        <h3 className="text-xl sm:text-2xl font-display font-bold text-white leading-tight mb-3 sm:mb-4 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-brand-300 group-hover:to-purple-300 transition-colors">
                           {campaign.name}
                         </h3>
                         
@@ -292,6 +274,11 @@ export default function PublicSorteios() {
                               onClick={() => {
                                 if (tab === 'finalizados') navigate('/meus-bilhetes')
                                 else {
+                                  if (!profile) {
+                                    toast.error('Você precisa estar logado para participar!')
+                                    navigate('/register')
+                                    return
+                                  }
                                   setTicketQuantity(1)
                                   setBuyingCampaign(campaign)
                                 }
@@ -337,10 +324,10 @@ export default function PublicSorteios() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-surface-900 border border-surface-700 rounded-3xl shadow-2xl overflow-hidden"
+              className="relative w-full max-w-md bg-surface-900 border border-surface-700 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden"
             >
               {/* Header */}
-              <div className="relative h-32 bg-gradient-to-br from-brand-600 to-purple-600 overflow-hidden">
+              <div className="relative h-20 sm:h-32 bg-gradient-to-br from-brand-600 to-purple-600 overflow-hidden">
                 <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 mix-blend-overlay"></div>
                 <div className="absolute top-4 right-4 z-10">
                   <button
@@ -350,16 +337,16 @@ export default function PublicSorteios() {
                     <X size={18} />
                   </button>
                 </div>
-                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-16 h-16 rounded-2xl bg-surface-900 flex items-center justify-center shadow-xl border border-surface-700 rotate-12">
-                  <Ticket size={32} className="text-brand-400 -rotate-12" />
+                <div className="absolute -bottom-4 sm:-bottom-6 left-1/2 -translate-x-1/2 w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-surface-900 flex items-center justify-center shadow-xl border border-surface-700 rotate-12">
+                  <Ticket size={24} className="text-brand-400 -rotate-12 sm:w-8 sm:h-8" />
                 </div>
               </div>
 
-              <div className="pt-10 px-6 pb-6 text-center">
-                <h2 className="text-2xl font-display font-bold text-white mb-2">
+              <div className="pt-6 sm:pt-10 px-4 sm:px-6 pb-4 sm:pb-6 text-center">
+                <h2 className="text-xl sm:text-2xl font-display font-bold text-white mb-1 sm:mb-2">
                   Confirmar Participação
                 </h2>
-                <p className="text-slate-400 text-sm mb-6">
+                <p className="text-slate-400 text-xs sm:text-sm mb-4 sm:mb-6">
                   Você está prestes a adquirir um bilhete para o sorteio <strong className="text-white">{buyingCampaign.name}</strong>.
                 </p>
 
@@ -420,14 +407,14 @@ export default function PublicSorteios() {
                 </div>
 
                 {((profile as any)?.balance || 0) < (buyingCampaign.ticket_price * ticketQuantity) && (
-                  <div className="mb-6 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-start gap-2 text-left">
-                    <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                    <span>Seu saldo é insuficiente para esta quantidade de bilhetes. Recarregue sua carteira.</span>
+                  <div className="mb-4 sm:mb-6 p-2 sm:p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs sm:text-sm flex items-start gap-2 text-left">
+                    <AlertCircle size={14} className="shrink-0 mt-0.5 sm:w-4 sm:h-4" />
+                    <span>Seu saldo é insuficiente. Recarregue.</span>
                   </div>
                 )}
 
                 <Button
-                  className="w-full h-14 text-lg font-bold shadow-lg shadow-brand-500/20"
+                  className="w-full h-12 sm:h-14 text-base sm:text-lg font-bold shadow-lg shadow-brand-500/20"
                   onClick={() => buyTicketMutation.mutate({ campaign: buyingCampaign, quantity: ticketQuantity })}
                   disabled={buyTicketMutation.isPending || ((profile as any)?.balance || 0) < (buyingCampaign.ticket_price * ticketQuantity)}
                   isLoading={buyTicketMutation.isPending}

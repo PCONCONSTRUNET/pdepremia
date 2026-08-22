@@ -222,7 +222,7 @@ export function Header() {
                               Meus Prêmios
                             </Link>
                             <Link
-                              to="/perfil?tab=recompensas"
+                              to="/recompensas"
                               onClick={() => setIsProfileOpen(false)}
                               className="flex items-center gap-2.5 px-3 py-2 text-brand-400 hover:text-brand-300 hover:bg-brand-500/10 rounded-lg text-sm transition-colors"
                             >
@@ -269,14 +269,43 @@ export function Header() {
           </div>
 
           {/* Mobile Actions */}
-          <div className="flex md:hidden items-center gap-3">
-            {isAuthenticated && <NotificationBell />}
+          <div className="flex md:hidden items-center gap-2">
+            {isAuthenticated && (
+              <>
+                <button onClick={() => setIsDepositModalOpen(true)} className="group outline-none relative mr-1">
+                  <div className="flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-lg bg-surface-700/60 border border-surface-600/50 hover:border-brand-500/50 transition-all cursor-pointer">
+                    <div className="relative">
+                      <span className="text-xs font-bold text-emerald-400 leading-none">
+                        {formatCurrency(displayedBalance)}
+                      </span>
+                      <AnimatePresence>
+                        {balanceAnimations.map((anim) => (
+                          <motion.div
+                            key={anim.id}
+                            initial={{ opacity: 0, y: 0, scale: 0.5 }}
+                            animate={{ opacity: 1, y: -20, scale: 1 }}
+                            exit={{ opacity: 0, y: -30 }}
+                            className={`absolute right-0 top-0 font-bold whitespace-nowrap z-50 text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] ${anim.diff > 0 ? 'text-emerald-400' : 'text-red-400'}`}
+                          >
+                            {anim.diff > 0 ? '+' : ''}{formatCurrency(anim.diff)}
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                    <div className="w-5 h-5 rounded bg-surface-600 group-hover:bg-brand-500 flex items-center justify-center text-white transition-colors">
+                      <Plus size={12} />
+                    </div>
+                  </div>
+                </button>
+                <NotificationBell />
+              </>
+            )}
             <button
               className="text-slate-400 hover:text-white transition-colors p-1"
               onClick={() => setIsMobileOpen(!isMobileOpen)}
-              aria-label="Menu"
+              aria-label="Perfil"
             >
-              {isMobileOpen ? <X size={22} /> : <Menu size={22} />}
+              {isMobileOpen ? <X size={22} /> : <User size={22} />}
             </button>
           </div>
         </div>
@@ -285,17 +314,16 @@ export function Header() {
       {/* Mobile Menu */}
       <AnimatePresence>
         {isMobileOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="md:hidden border-t border-white/5 bg-surface-900/95 backdrop-blur-xl overflow-hidden"
-          >
-            <div className="px-4 py-4 space-y-1">
-              {/* Nav links movidos para o rodapé */}
-
-              <div className="border-t border-surface-700/50 pt-3 mt-3 space-y-1">
+          <>
+            <div className="fixed inset-0 z-40 md:hidden" onClick={() => setIsMobileOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              transition={{ duration: 0.15 }}
+              className="absolute right-4 top-[60px] w-[260px] bg-surface-900 border border-surface-700 rounded-2xl shadow-2xl z-50 overflow-hidden md:hidden"
+            >
+              <div className="px-3 py-3 space-y-1">
                 {isAuthenticated ? (
                   <>
                     {/* Rank Mobile */}
@@ -407,8 +435,8 @@ export function Header() {
                   </div>
                 )}
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 

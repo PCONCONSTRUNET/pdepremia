@@ -216,3 +216,12 @@ export function calculateAge(birthDate: string): number {
   return age
 }
 
+/** Generate a short hybrid ID for a withdrawal */
+export function generateWithdrawalId(id: string, cpf?: string | null, name?: string | null): string {
+  const cpfDigits = cpf ? cpf.replace(/\D/g, '').substring(0, 3) : '000'
+  const nameParts = (name || 'Desconhecido').trim().split(/\s+/)
+  const firstInitial = nameParts[0].charAt(0).toUpperCase()
+  const lastInitial = nameParts.length > 1 ? nameParts[nameParts.length - 1].charAt(0).toUpperCase() : firstInitial
+  const hash = id.substring(0, 4).toUpperCase()
+  return `#${cpfDigits}${firstInitial}${lastInitial}-${hash}`
+}

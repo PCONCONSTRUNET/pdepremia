@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { User, Phone, Shield, ShieldCheck, LogOut, FileText, ShoppingBag, Clock, CheckCircle2, XCircle, Wallet, Save, ArrowUpRight, ArrowDownLeft, Gift, Ticket, X, Package, Camera, Trophy } from 'lucide-react'
+import { User, Phone, Shield, ShieldCheck, LogOut, FileText, ShoppingBag, Clock, CheckCircle2, XCircle, Wallet, Save, ArrowUpRight, ArrowDownLeft, Gift, Ticket, X, Package, Camera, Trophy, Copy } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import toast from 'react-hot-toast'
-import { maskPhone, maskCPF, maskCNPJ, formatCurrency } from '@/lib/utils'
+import { maskPhone, maskCPF, maskCNPJ, formatCurrency, generateWithdrawalId, copyToClipboard } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
@@ -17,7 +17,7 @@ export default function Profile() {
   const { profile, signOut } = useAuth()
   const queryClient = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [activeTab, setActiveTab] = useState<'dados' | 'transacoes' | 'saque' | 'documentos' | 'recompensas' | 'premios'>('dados')
+  const [activeTab, setActiveTab] = useState<'dados' | 'transacoes' | 'saque' | 'documentos'>('dados')
   const [orders, setOrders] = useState<any[]>([])
   const [loadingOrders, setLoadingOrders] = useState(true)
   const [walletTransactions, setWalletTransactions] = useState<any[]>([])
@@ -255,7 +255,7 @@ export default function Profile() {
     if (paramsTab === 'jogos') {
       setActiveTab('transacoes')
       setTransactionTab('jogos')
-    } else if (paramsTab && ['dados', 'transacoes', 'saque', 'documentos', 'recompensas', 'premios'].includes(paramsTab)) {
+    } else if (paramsTab && ['dados', 'transacoes', 'saque', 'documentos'].includes(paramsTab)) {
       setActiveTab(paramsTab as any)
     }
   }, [searchParams])
@@ -277,7 +277,7 @@ export default function Profile() {
     return `${h}h ${m}m ${s}s`
   }
 
-  const handleTabChange = (tab: 'dados' | 'transacoes' | 'saque' | 'documentos' | 'recompensas' | 'premios') => {
+  const handleTabChange = (tab: 'dados' | 'transacoes' | 'saque' | 'documentos') => {
     setActiveTab(tab)
     setSearchParams({ tab })
   }
@@ -408,7 +408,7 @@ export default function Profile() {
           if (data) paymentsData = data
         }
 
-        const allowedWalletTypes = ['withdrawal', 'admin_bonus', 'promo_code']
+        const allowedWalletTypes = ['admin_bonus', 'promo_code'] // removed 'withdrawal' since we use withdrawalsData
         const processedWT = (wtData || []).filter(tx => allowedWalletTypes.includes(tx.type))
         const processedPayments = (paymentsData || []).map(p => ({
           id: p.id,
@@ -417,8 +417,16 @@ export default function Profile() {
           status: p.status,
           created_at: p.created_at
         }))
+        
+        const processedWithdrawals = (withdrawalsData || []).map(w => ({
+          id: w.id,
+          type: 'withdrawal',
+          amount: w.amount,
+          status: w.status,
+          created_at: w.created_at
+        }))
 
-        const unifiedWallet = [...processedWT, ...processedPayments].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        const unifiedWallet = [...processedWT, ...processedPayments, ...processedWithdrawals].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
         setWalletTransactions(unifiedWallet)
         setWithdrawals(withdrawalsData || [])
@@ -485,6 +493,8 @@ export default function Profile() {
     if (!status || status === 'completed') return <span className="flex items-center gap-1 text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded text-xs font-medium"><CheckCircle2 size={12} /> Concluído</span>
     switch (status) {
       case 'paid':
+      case 'approved':
+      case 'confirmed':
         return <span className="flex items-center gap-1 text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded text-xs font-medium"><CheckCircle2 size={12} /> Aprovado</span>
       case 'pending':
       case 'awaiting_payment':
@@ -587,30 +597,7 @@ export default function Profile() {
             <ShoppingBag size={16} /> Transações
           </div>
         </button>
-        <button
-          onClick={() => handleTabChange('premios')}
-          className={`pb-3 mr-8 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-            activeTab === 'premios' 
-              ? 'border-brand-500 text-brand-400' 
-              : 'border-transparent text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <Trophy size={16} /> Meus Prêmios
-          </div>
-        </button>
-        <button
-          onClick={() => handleTabChange('recompensas')}
-          className={`pb-3 mr-8 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'recompensas' 
-              ? 'border-brand-500 text-brand-400' 
-              : 'border-transparent text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <Gift size={16} /> Recompensas
-          </div>
-        </button>
+
         <button
           onClick={() => handleTabChange('documentos')}
           className={`pb-3 mr-8 text-sm font-medium border-b-2 transition-colors ${
@@ -740,7 +727,22 @@ export default function Profile() {
                         {withdrawals.map((w) => (
                           <div key={w.id} className="bg-surface-900 border border-white/5 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div>
-                              <p className="text-white font-medium mb-1">{formatCurrency(w.amount)}</p>
+                              <div className="flex flex-wrap items-center gap-2 mb-1">
+                                <span className="text-white font-medium">Saque</span>
+                                <div className="flex items-center gap-1 bg-surface-800 px-2 py-0.5 rounded text-xs font-mono text-slate-300">
+                                  <span>{generateWithdrawalId(w.id, profile?.cpf, profile?.full_name)}</span>
+                                  <button 
+                                    onClick={() => {
+                                      copyToClipboard(generateWithdrawalId(w.id, profile?.cpf, profile?.full_name))
+                                      toast.success('ID copiado!')
+                                    }}
+                                    className="hover:text-white transition-colors p-0.5"
+                                  >
+                                    <Copy size={12} />
+                                  </button>
+                                </div>
+                                <span className="text-white font-medium ml-1">- {formatCurrency(w.amount)}</span>
+                              </div>
                               <div className="flex items-center gap-2 text-xs text-slate-400">
                                 <span>{format(new Date(w.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
                                 <span>•</span>
@@ -1114,8 +1116,23 @@ export default function Profile() {
                             {tx.type === 'deposit' || tx.type === 'admin_bonus' || tx.type === 'promo_code' ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}
                           </div>
                           <div>
-                            <div className="flex items-center gap-2 mb-1">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
                               <h3 className="text-white font-medium">{tx.type === 'deposit' ? 'Depósito' : tx.type === 'admin_bonus' ? 'Saldo Adicionado (Manual)' : tx.type === 'promo_code' ? 'Código Promocional' : 'Saque'}</h3>
+                              {tx.type === 'withdrawal' && (
+                                <div className="flex items-center gap-1 bg-surface-800 px-2 py-0.5 rounded text-xs font-mono text-slate-300">
+                                  <span>{generateWithdrawalId(tx.id, profile?.cpf, profile?.full_name)}</span>
+                                  <button 
+                                    onClick={() => {
+                                      copyToClipboard(generateWithdrawalId(tx.id, profile?.cpf, profile?.full_name))
+                                      toast.success('ID copiado!')
+                                    }}
+                                    className="hover:text-white transition-colors p-0.5"
+                                    title="Copiar ID"
+                                  >
+                                    <Copy size={12} />
+                                  </button>
+                                </div>
+                              )}
                               {getStatusBadge(tx.status)}
                             </div>
                             <p className="text-sm text-slate-400">
@@ -1220,236 +1237,6 @@ export default function Profile() {
                   </div>
                 )
               )}
-            </motion.div>
-          ) : activeTab === 'recompensas' ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="glass rounded-2xl border border-white/5 overflow-hidden"
-            >
-              {/* Header Recompensas */}
-              <div className="p-6 border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-display font-bold text-white mb-1 flex items-center gap-2">
-                    Minhas Recompensas
-                  </h2>
-                  <p className="text-slate-400 text-sm">Todas as suas recompensas guardadas em um só lugar! Não fica mais fácil do que isso.</p>
-                </div>
-                <button 
-                  onClick={() => setIsPromoOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-surface-900 border border-surface-700 hover:border-brand-500/50 hover:text-white rounded-xl text-slate-300 text-sm font-medium transition-all group"
-                >
-                  <Ticket size={16} className="text-brand-400 group-hover:text-brand-300" />
-                  Inserir código promocional
-                </button>
-              </div>
-
-              {/* Minhas Boxes */}
-              {availableBoxes.length > 0 && (
-                <div className="p-6 border-b border-white/5 bg-surface-900/50">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-display font-bold text-white flex items-center gap-2">
-                      <Package className="text-brand-400" size={24} />
-                      Minhas Boxes Disponíveis
-                    </h3>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {groupedAvailableBoxesArray.map((group: any) => {
-                      const count = group.items.length;
-                      const firstBox = group.items[0];
-                      return (
-                      <motion.div 
-                        whileHover={{ y: -4 }}
-                        key={group.boxId} 
-                        className="group relative bg-gradient-to-b from-surface-800 to-surface-900 border border-surface-700 hover:border-brand-500/50 rounded-3xl p-6 flex flex-col items-center text-center overflow-hidden transition-all duration-300 shadow-xl"
-                      >
-                        {/* Glow effect */}
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-brand-500/20 blur-[50px] rounded-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        
-                        {count > 1 && (
-                          <div className="absolute top-4 right-4 bg-brand-500 text-white text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-md shadow-lg z-20">
-                            {count}x
-                          </div>
-                        )}
-
-                        <div className="relative w-32 h-32 mb-6 flex items-center justify-center">
-                          {group.box?.image_url ? (
-                            <img 
-                              src={group.box.image_url} 
-                              alt="Box" 
-                              className="w-full h-full object-contain drop-shadow-2xl group-hover:scale-110 transition-transform duration-500" 
-                            />
-                          ) : (
-                            <div className="w-24 h-24 bg-surface-800 rounded-full flex items-center justify-center border border-surface-700 shadow-inner">
-                              <Package size={48} className="text-brand-400" />
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div className="mb-6 relative z-10">
-                          <h4 className="text-lg font-display font-bold text-white mb-1 group-hover:text-brand-400 transition-colors">
-                            {group.box?.name || 'Box Misteriosa'}
-                          </h4>
-                          <span className="inline-block px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-medium rounded-full border border-emerald-500/20">
-                            Pronta para abrir
-                          </span>
-                        </div>
-                        
-                        <Button 
-                          variant="primary" 
-                          className="w-full relative z-10 py-4 text-base shadow-lg shadow-brand-500/20"
-                          onClick={() => window.location.href = `/abrir-box/${firstBox.id}`}
-                        >
-                          Abrir Agora
-                        </Button>
-                      </motion.div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-
-              <div className="p-6">
-                <div className="flex items-center justify-center mb-8 relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-surface-700"></div>
-                  </div>
-                  <div className="relative bg-[#131829] px-4 text-xs font-bold tracking-widest text-slate-500 uppercase">
-                    Disponíveis
-                  </div>
-                </div>
-
-                {/* Grid de Recompensas */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  
-                  {/* Active XP Box */}
-                  {isXpActive && (
-                    <div className="bg-gradient-to-br from-brand-900/40 to-surface-800 border border-brand-500/50 rounded-2xl overflow-hidden flex flex-col shadow-[0_0_15px_rgba(99,102,241,0.15)] relative">
-                      <div className="absolute top-0 left-0 w-full h-1 bg-brand-500" />
-                      <div className="p-5 flex gap-4 h-full">
-                        <div className="w-16 h-16 rounded-xl bg-brand-500/20 border border-brand-500/30 flex items-center justify-center shrink-0 shadow-inner">
-                          <ArrowUpRight size={28} className="text-brand-400" />
-                        </div>
-                        <div className="flex flex-col h-full">
-                          <h3 className="text-white font-bold mb-1">XP Duplo Ativo</h3>
-                          <p className="text-slate-400 text-xs leading-relaxed">
-                            Você está ganhando o dobro de XP em todas as atividades. Aproveite!
-                          </p>
-                        </div>
-                      </div>
-                      <div className="mt-auto">
-                        <div className="px-5 py-3 border-t border-surface-700/50 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-brand-400 animate-pulse"></div>
-                            <span className="text-brand-400 font-medium text-xs uppercase tracking-wider">Ativo</span>
-                          </div>
-                          <span className="text-white font-mono font-bold">{formatCountdown(xpTimeLeft)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Dynamic Rewards from DB */}
-                  {userRewards?.map((reward: any) => (
-                    <div key={reward.id} className="bg-surface-800 border border-surface-700 rounded-2xl overflow-hidden flex flex-col hover:border-surface-600 transition-colors">
-                      <div className="p-5 flex gap-4 h-full">
-                        {reward.image_url ? (
-                          <div className="w-20 h-20 shrink-0 flex items-center justify-center">
-                            <img 
-                              src={reward.image_url} 
-                              alt={reward.name} 
-                              className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:scale-110 transition-transform" 
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-16 h-16 rounded-xl bg-surface-900 border border-surface-700 flex items-center justify-center shrink-0 shadow-inner overflow-hidden">
-                            <ArrowUpRight size={28} className="text-brand-400" />
-                          </div>
-                        )}
-                        <div className="flex flex-col h-full">
-                          <h3 className="text-white font-bold mb-1">{reward.name}</h3>
-                          <p className="text-slate-400 text-xs leading-relaxed line-clamp-4">
-                            {reward.name.toLowerCase().includes('xp') 
-                              ? 'Ative esta recompensa para subir de nível duas vezes mais rápido! A duração desta recompensa é de 2 horas.'
-                              : reward.name.toLowerCase().includes('cashback')
-                              ? 'O cashback corresponde a porcentagem das perdas líquidas, conforme a fórmula, e é aplicado apenas a apostas com dinheiro real.'
-                              : `Recompensa obtida via ${reward.source === 'daily_wheel' ? 'Roleta Diária' : 'Plataforma'}.`}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="mt-auto">
-                        <div className="px-5 py-3 border-t border-surface-700/50 flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                          <span className="text-slate-400 text-xs">{reward.category || 'Recompensa'}</span>
-                        </div>
-                        <div className="px-5 pb-5 pt-3 border-t border-surface-700/50">
-                          <Button 
-                            variant="primary" 
-                            onClick={async () => {
-                              try {
-                                if (reward.name.toLowerCase().includes('xp')) {
-                                  if (isXpActive) {
-                                    toast.error('Você já possui um bônus de XP ativo. Aguarde expirar!')
-                                    return
-                                  }
-                                  setIsXpActive(true)
-                                  setXpTimeLeft(7200)
-                                }
-                                await (supabase as any).rpc('claim_user_reward', { p_reward_id: reward.id })
-                                toast.success(`${reward.name} reivindicado com sucesso!`)
-                                queryClient.invalidateQueries({ queryKey: ['active_xp_reward'] })
-                                refetchRewards()
-                              } catch (err) {
-                                console.error(err)
-                                toast.error('Erro ao reivindicar recompensa.')
-                              }
-                            }}
-                            className="w-full !bg-[#f43f5e] hover:!bg-[#e11d48] border-none shadow-lg shadow-rose-500/20 font-bold py-3 text-sm"
-                          >
-                            Reivindicar
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Card Roleta Ouro */}
-                  <Link to="/roleta-diaria" className="bg-surface-800 border border-surface-700 rounded-2xl overflow-hidden flex flex-col hover:border-amber-500/50 transition-colors sm:col-span-2 lg:col-span-1 min-h-[300px] justify-center items-center p-6 text-center cursor-pointer group">
-                    <div className="w-24 h-24 mb-6 flex items-center justify-center relative overflow-hidden group-hover:scale-105 transition-transform">
-                      <img 
-                        src={getRankRouletteIcon((profile as any)?.rank || 'P Starter')} 
-                        alt={`Roleta ${profile?.rank || 'P Starter'}`}
-                        className="w-full h-full object-contain"
-                      />
-                    </div>
-                    <h3 className="text-white font-bold text-lg mb-2">Roleta De Prêmio {(profile as any)?.rank || 'P Starter'}</h3>
-                    <p className="text-slate-400 text-xs mb-8">Prêmio Resgatável Diariamente</p>
-                    {dailyWheelCooldown ? (
-                      <div className="text-slate-500 text-xs font-medium bg-surface-900 px-4 py-2 rounded-lg border border-surface-700/50">
-                        Disponível Em: <span className="text-slate-300">{dailyWheelCooldown}</span>
-                      </div>
-                    ) : (
-                      <div className="text-amber-500 text-sm font-bold bg-amber-500/10 px-6 py-3 rounded-xl border border-amber-500/20 group-hover:bg-amber-500 group-hover:text-white transition-colors">
-                        Clique para Girar
-                      </div>
-                    )}
-                  </Link>
-
-                </div>
-              </div>
-            </motion.div>
-          ) : activeTab === 'premios' ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="glass rounded-2xl border border-white/5 overflow-hidden"
-            >
-              <div className="p-0 sm:p-4">
-                <div className="pointer-events-auto">
-                  <MyPrizes />
-                </div>
-              </div>
             </motion.div>
           ) : null}
         </div>

@@ -1,8 +1,12 @@
+import { useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
 import { AppRouter } from '@/router'
 import { useAuth } from '@/hooks/useAuth'
 import { LevelUpOverlay } from '@/components/common/LevelUpOverlay'
+import { supabase } from '@/lib/supabase'
+import { useAuthStore } from '@/store/authStore'
+import type { Profile } from '@/types'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -17,6 +21,34 @@ const queryClient = new QueryClient({
 function AppContent() {
   // Initialize auth listener at app root
   useAuth()
+  
+  const { user, setProfile, reset } = useAuthStore()
+
+  // Initialize global realtime listener for profile updates
+  useEffect(() => {
+    if (!user?.id) return
+
+    const channel = supabase
+      .channel(`public:profiles:${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
+        (payload) => {
+          if (payload.new.status === 'banned') {
+            supabase.auth.signOut()
+            reset()
+            return
+          }
+          setProfile(payload.new as Profile)
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user?.id, setProfile, reset])
+
   return (
     <>
       <AppRouter />

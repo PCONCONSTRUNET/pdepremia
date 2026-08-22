@@ -35,14 +35,23 @@ export function useAuth() {
   useEffect(() => {
     // Initial session check
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-
+      let activeProfile = null
+      
       if (session?.user) {
         const profile = await fetchProfile(session.user.id)
-        setProfile(profile)
+        if (profile?.status === 'banned') {
+          await supabase.auth.signOut()
+          reset()
+          setLoading(false)
+          setInitialized(true)
+          return
+        }
+        activeProfile = profile
       }
 
+      setSession(session)
+      setUser(session?.user ?? null)
+      setProfile(activeProfile)
       setLoading(false)
       setInitialized(true)
     })
@@ -51,21 +60,29 @@ export function useAuth() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-
+      let activeProfile = null
+      
       if (session?.user) {
         const profile = await fetchProfile(session.user.id)
-        setProfile(profile)
-      } else {
-        setProfile(null)
+        if (profile?.status === 'banned') {
+          await supabase.auth.signOut()
+          reset()
+          setLoading(false)
+          return
+        }
+        activeProfile = profile
       }
 
+      setSession(session)
+      setUser(session?.user ?? null)
+      setProfile(activeProfile)
       setLoading(false)
     })
 
-    return () => subscription.unsubscribe()
-  }, [fetchProfile, setInitialized, setLoading, setProfile, setSession, setUser])
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [fetchProfile, setInitialized, setLoading, setProfile, setSession, setUser, reset, user?.id])
 
   const signOut = async () => {
     setLoading(true)

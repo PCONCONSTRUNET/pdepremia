@@ -495,7 +495,7 @@ export default function AdminPayments() {
         </div>
       ) : (
         <EmptyState 
-          icon={Wallet} 
+          icon={<Wallet size={48} className="text-surface-600 mb-4 mx-auto" />} 
           title="Nenhum pagamento" 
           description={searchQuery ? "Nenhum resultado encontrado para a sua busca." : "Ainda não há pagamentos no período selecionado."}
         />

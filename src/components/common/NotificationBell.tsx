@@ -36,7 +36,7 @@ export function NotificationBell() {
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('notifications')
-        .update({ read_at: new Date().toISOString() })
+        .update({ is_read: true })
         .eq('id', id)
       if (error) throw error
     },
@@ -50,9 +50,9 @@ export function NotificationBell() {
       if (!profile?.id) return
       const { error } = await supabase
         .from('notifications')
-        .update({ read_at: new Date().toISOString() })
+        .update({ is_read: true })
         .eq('user_id', profile.id)
-        .is('read_at', null)
+        .eq('is_read', false)
       if (error) throw error
     },
     onSuccess: () => {
@@ -72,7 +72,7 @@ export function NotificationBell() {
 
   if (!isAuthenticated) return null
 
-  const unreadCount = notifications?.filter(n => !n.read_at).length || 0
+  const unreadCount = notifications?.filter(n => !n.is_read).length || 0
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -120,12 +120,12 @@ export function NotificationBell() {
                   <div
                     key={notification.id}
                     onClick={() => {
-                      if (!notification.read_at) {
+                      if (!notification.is_read) {
                         markAsReadMutation.mutate(notification.id)
                       }
                     }}
                     className={`p-3 rounded-lg flex gap-3 transition-colors cursor-pointer ${
-                      !notification.read_at ? 'bg-brand-500/10 hover:bg-brand-500/20' : 'hover:bg-surface-700'
+                      !notification.is_read ? 'bg-brand-500/10 hover:bg-brand-500/20' : 'hover:bg-surface-700'
                     }`}
                   >
                     <div className={`mt-0.5 w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
@@ -134,7 +134,7 @@ export function NotificationBell() {
                       {notification.type === 'sorteio_winner' ? <Trophy size={16} /> : <Info size={16} />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium ${!notification.read_at ? 'text-white' : 'text-slate-300'}`}>
+                      <p className={`text-sm font-medium ${!notification.is_read ? 'text-white' : 'text-slate-300'}`}>
                         {notification.title}
                       </p>
                       <p className="text-xs text-slate-400 mt-1 break-words">
@@ -144,8 +144,8 @@ export function NotificationBell() {
                         {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale: ptBR })}
                       </p>
                     </div>
-                    {!notification.read_at && (
-                      <div className="w-2 h-2 rounded-full bg-brand-500 mt-1.5 shrink-0" />
+                    {!notification.is_read && (
+                      <div className="w-2 h-2 bg-brand-500 rounded-full mt-1 shrink-0"></div>
                     )}
                   </div>
                 ))

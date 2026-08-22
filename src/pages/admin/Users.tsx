@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { Users, UserCheck, Shield, Eye, Trash2 } from 'lucide-react'
@@ -58,6 +58,26 @@ export default function AdminUsers() {
     },
     onError: () => toast.error('Erro ao excluir cliente'),
   })
+
+  // Realtime updates for new user signups
+  useEffect(() => {
+    const channel = supabase
+      .channel('admin-users-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles' },
+        () => {
+          // Whenever any user profile changes (new user, updated role, banned, etc)
+          // we tell React Query to fetch the updated list in the background
+          queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [queryClient])
 
   return (
     <div className="space-y-6">

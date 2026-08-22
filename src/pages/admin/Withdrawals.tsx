@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { Wallet, Search, CheckCircle2, XCircle, Clock, SearchX } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { ConfirmModal } from '@/components/ui/Modal'
+import { ConfirmModal, Modal } from '@/components/ui/Modal'
 import { supabase } from '@/lib/supabase'
-import { formatCurrency, maskCPF } from '@/lib/utils'
+import { formatCurrency, maskCPF, generateWithdrawalId } from '@/lib/utils'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import toast from 'react-hot-toast'
@@ -24,6 +24,96 @@ type Withdrawal = {
   } | null
 }
 
+const printReceipt = (w: Withdrawal) => {
+  const html = `
+    <html>
+      <head>
+        <title>Comprovante de Saque</title>
+        <style>
+          body { font-family: sans-serif; padding: 40px; color: #1e293b; background: white; margin: 0; }
+          .receipt-container { max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; padding: 30px; border-radius: 8px; }
+          .header { text-align: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 30px; }
+          .logo { max-width: 150px; margin-bottom: 10px; background: #111; padding: 10px; border-radius: 8px; }
+          .title { font-size: 24px; font-weight: bold; margin: 0; color: #0f172a; }
+          .row { display: flex; justify-content: space-between; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #e2e8f0; font-size: 14px; }
+          .label { color: #64748b; font-weight: 500; }
+          .value { color: #0f172a; font-weight: 600; text-align: right; }
+          .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #94a3b8; }
+          .status-badge { display: inline-block; padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+          .status-pending { background: #fef08a; color: #854d0e; }
+          .status-approved { background: #bbf7d0; color: #166534; }
+          .status-rejected { background: #fecaca; color: #991b1b; }
+          @media print {
+            body { padding: 0; }
+            .receipt-container { border: none; padding: 0; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="receipt-container">
+          <div class="header">
+            <img src="${window.location.origin}/logo-rodape.png" class="logo" alt="P DE PREMIA" />
+            <h2 class="title">Comprovante de Saque</h2>
+          </div>
+          
+          <div class="row">
+            <span class="label">Cliente:</span>
+            <span class="value">${w.profiles?.full_name}</span>
+          </div>
+          <div class="row">
+            <span class="label">CPF do Cliente:</span>
+            <span class="value">${w.profiles?.cpf || 'Não informado'}</span>
+          </div>
+          <div class="row">
+            <span class="label">Chave PIX:</span>
+            <span class="value">${w.pix_key} <br/><span style="font-size:11px; color:#64748b; font-weight:normal;">(${w.profiles?.pix_key_type?.toUpperCase() || 'PIX'})</span></span>
+          </div>
+          <div class="row">
+            <span class="label">Valor Solicitado:</span>
+            <span class="value" style="font-size: 16px;">R$ ${w.amount.toFixed(2).replace('.', ',')}</span>
+          </div>
+          <div class="row">
+            <span class="label">Data da Solicitação:</span>
+            <span class="value">${format(new Date(w.created_at), "dd/MM/yyyy 'às' HH:mm")}</span>
+          </div>
+          <div class="row">
+            <span class="label">ID da Transação:</span>
+            <span class="value" style="font-family: monospace; font-size: 15px;">${generateWithdrawalId(w.id, w.profiles?.cpf, w.profiles?.full_name)}</span>
+          </div>
+          <div class="row">
+            <span class="label">Status:</span>
+            <span class="value">
+              <span class="status-badge status-${w.status}">
+                ${w.status === 'pending' ? 'Pendente' : w.status === 'approved' ? 'Aprovado' : 'Recusado'}
+              </span>
+            </span>
+          </div>
+          ${w.admin_notes ? `
+          <div class="row" style="flex-direction: column; border-bottom: none;">
+            <span class="label" style="margin-bottom: 5px;">Observação Interna / Motivo:</span>
+            <span class="value" style="text-align: left; font-weight: normal; background: #f8fafc; padding: 10px; border-radius: 4px; border: 1px solid #e2e8f0;">${w.admin_notes}</span>
+          </div>
+          ` : ''}
+
+          <div class="footer">
+            Gerado pelo sistema <b>P DE PREMIA</b> em ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")}
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+  const win = window.open('', '_blank');
+  if (win) {
+    win.document.write(html);
+    win.document.close();
+    setTimeout(() => {
+      win.print();
+    }, 500);
+  } else {
+    alert('Por favor, permita popups para gerar o comprovante.');
+  }
+};
+
 export default function AdminWithdrawals() {
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([])
   const [loading, setLoading] = useState(true)
@@ -32,6 +122,8 @@ export default function AdminWithdrawals() {
   
   // Actions
   const [approvingId, setApprovingId] = useState<string | null>(null)
+  const [confirmApproveId, setConfirmApproveId] = useState<string | null>(null)
+  const [viewingWithdrawal, setViewingWithdrawal] = useState<Withdrawal | null>(null)
   
   const [rejectingId, setRejectingId] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState('')
@@ -105,11 +197,20 @@ export default function AdminWithdrawals() {
     
     if (searchTerm) {
       const term = searchTerm.toLowerCase()
+      const termDigits = term.replace(/\D/g, '')
+      
       const nameMatch = w.profiles?.full_name?.toLowerCase().includes(term)
-      const cpfMatch = w.profiles?.cpf?.toLowerCase().includes(term)
+      
+      const wCpf = w.profiles?.cpf || ''
+      const cpfDigits = wCpf.replace(/\D/g, '')
+      const cpfMatch = wCpf.toLowerCase().includes(term) || (termDigits.length > 0 && cpfDigits.includes(termDigits))
+      
       const pixMatch = w.pix_key.toLowerCase().includes(term)
       
-      return nameMatch || cpfMatch || pixMatch
+      const idStr = generateWithdrawalId(w.id, w.profiles?.cpf, w.profiles?.full_name).toLowerCase()
+      const idMatch = idStr.includes(term)
+      
+      return nameMatch || cpfMatch || pixMatch || idMatch
     }
     
     return true
@@ -203,7 +304,11 @@ export default function AdminWithdrawals() {
                 </tr>
               ) : (
                 filteredWithdrawals.map((w) => (
-                  <tr key={w.id} className="group hover:bg-white/[0.02] transition-colors">
+                  <tr 
+                    key={w.id} 
+                    className="group hover:bg-white/[0.02] transition-colors cursor-pointer"
+                    onClick={() => setViewingWithdrawal(w)}
+                  >
                     <td className="py-4 px-4">
                       <div className="flex flex-col">
                         <span className="text-white font-medium">{w.profiles?.full_name}</span>
@@ -212,8 +317,8 @@ export default function AdminWithdrawals() {
                     </td>
                     <td className="py-4 px-4">
                       <div className="flex flex-col">
-                        <span className="text-slate-300">{format(new Date(w.created_at), 'dd/MM/yyyy')}</span>
-                        <span className="text-slate-500 text-xs">{format(new Date(w.created_at), 'HH:mm')}</span>
+                        <span className="text-slate-300 font-mono text-sm">{generateWithdrawalId(w.id, w.profiles?.cpf, w.profiles?.full_name)}</span>
+                        <span className="text-slate-500 text-xs">{format(new Date(w.created_at), 'dd/MM/yyyy HH:mm')}</span>
                       </div>
                     </td>
                     <td className="py-4 px-4">
@@ -240,10 +345,9 @@ export default function AdminWithdrawals() {
                             variant="primary"
                             size="sm"
                             className="bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20"
-                            onClick={() => {
-                              if(confirm('Você já realizou a transferência PIX na sua conta bancária? Se sim, confirme para aprovar.')) {
-                                handleApprove(w.id)
-                              }
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setConfirmApproveId(w.id)
                             }}
                             isLoading={approvingId === w.id}
                           >
@@ -254,7 +358,10 @@ export default function AdminWithdrawals() {
                             variant="outline"
                             size="sm"
                             className="border-red-500/50 text-red-400 hover:bg-red-500/10"
-                            onClick={() => setRejectingId(w.id)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setRejectingId(w.id)
+                            }}
                             disabled={approvingId === w.id}
                           >
                             <XCircle size={16} className="mr-1.5" />
@@ -270,6 +377,21 @@ export default function AdminWithdrawals() {
           </table>
         </div>
       </Card>
+
+      {/* Aprovar Saque Modal */}
+      <ConfirmModal
+        isOpen={!!confirmApproveId}
+        onClose={() => setConfirmApproveId(null)}
+        onConfirm={() => {
+          if (confirmApproveId) handleApprove(confirmApproveId)
+          setConfirmApproveId(null)
+        }}
+        title="Aprovar Saque"
+        description="Você já realizou a transferência PIX na sua conta bancária? Se sim, confirme para aprovar o saque no sistema."
+        confirmLabel="Confirmar Aprovação"
+        cancelLabel="Cancelar"
+        variant="primary"
+      />
 
       {/* Recusar Saque Modal */}
       <ConfirmModal
@@ -298,6 +420,65 @@ export default function AdminWithdrawals() {
           />
         </div>
       </ConfirmModal>
+
+      {/* Modal de Detalhes do Saque e Comprovante */}
+      {viewingWithdrawal && (
+        <Modal
+          isOpen={!!viewingWithdrawal}
+          onClose={() => setViewingWithdrawal(null)}
+          title="Detalhes do Saque"
+          size="md"
+        >
+          <div className="space-y-4">
+            <div className="bg-surface-900 border border-white/5 rounded-xl p-4 space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-sm">ID da Transação</span>
+                <span className="text-white font-mono text-sm">{generateWithdrawalId(viewingWithdrawal.id, viewingWithdrawal.profiles?.cpf, viewingWithdrawal.profiles?.full_name)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-sm">Cliente</span>
+                <span className="text-white font-medium">{viewingWithdrawal.profiles?.full_name}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-sm">CPF</span>
+                <span className="text-white font-medium">{viewingWithdrawal.profiles?.cpf ? maskCPF(viewingWithdrawal.profiles.cpf) : 'Não informado'}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-sm">Chave PIX ({viewingWithdrawal.profiles?.pix_key_type?.toUpperCase() || 'PIX'})</span>
+                <span className="text-white font-mono text-sm">{viewingWithdrawal.pix_key}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-sm">Valor Solicitado</span>
+                <span className="text-emerald-400 font-bold">{formatCurrency(viewingWithdrawal.amount)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-sm">Data</span>
+                <span className="text-white text-sm">{format(new Date(viewingWithdrawal.created_at), "dd/MM/yyyy 'às' HH:mm")}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-sm">Status</span>
+                <span>{getStatusBadge(viewingWithdrawal.status)}</span>
+              </div>
+              {viewingWithdrawal.admin_notes && (
+                <div className="pt-3 border-t border-white/5">
+                  <span className="block text-slate-400 text-sm mb-1">Observação Interna/Motivo</span>
+                  <p className="text-white text-sm bg-surface-950 p-2 rounded-lg">{viewingWithdrawal.admin_notes}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button
+                variant="outline"
+                className="w-full bg-surface-900 border-surface-700 hover:text-white"
+                onClick={() => printReceipt(viewingWithdrawal)}
+              >
+                Gerar Comprovante
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }

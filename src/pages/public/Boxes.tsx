@@ -75,7 +75,7 @@ export default function BoxesPage() {
     return (
       <div className="pt-24 pb-16 min-h-screen bg-surface-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-16">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mt-16">
             {Array.from({ length: 4 }).map((_, i) => (
               <CardSkeleton key={i} />
             ))}
@@ -112,7 +112,7 @@ export default function BoxesPage() {
             <p className="text-slate-400">Nenhuma box disponível no momento.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             {boxes.map((box, i) => {
               const style = boxStyles[i % boxStyles.length]
               return (
@@ -125,16 +125,16 @@ export default function BoxesPage() {
                 >
                   <div 
                     onClick={() => handlePreviewClick(box)}
-                    className="rounded-2xl p-6 flex-1 flex flex-col border border-white/5 bg-surface-800/80 relative overflow-hidden cursor-pointer"
+                    className="rounded-2xl p-3 sm:p-6 flex-1 flex flex-col border border-white/5 bg-surface-800/80 relative overflow-hidden cursor-pointer"
                   >
                     <div className={`absolute inset-0 ${style.bg} opacity-20 group-hover:opacity-40 transition-opacity`} />
                     
-                    <div className="flex justify-center mb-4 relative z-10">
-                      <img src="/logo-rodape.png" alt="P DE PREMIA" className="h-8 w-auto object-contain opacity-80" />
+                    <div className="flex justify-center mb-2 sm:mb-4 relative z-10">
+                      <img src="/logo-rodape.png" alt="P DE PREMIA" className="h-6 sm:h-8 w-auto object-contain opacity-80" />
                     </div>
                     
-                    <div className="relative mb-6 flex justify-center mt-4">
-                      <div className="w-32 h-32 md:w-40 md:h-40 relative flex items-center justify-center">
+                    <div className="relative mb-3 sm:mb-6 flex justify-center mt-2 sm:mt-4">
+                      <div className="w-20 h-20 sm:w-32 sm:h-32 md:w-40 md:h-40 relative flex items-center justify-center">
                         <div className={`absolute inset-0 ${style.bg} rounded-full blur-2xl opacity-50 group-hover:opacity-100 transition-opacity duration-500`} />
                         {box.image_url ? (
                           <img 
@@ -145,30 +145,30 @@ export default function BoxesPage() {
                             className="w-full h-full object-contain relative z-10 drop-shadow-2xl group-hover:rotate-3 transition-transform select-none pointer-events-none"
                           />
                         ) : (
-                          <Gift size={64} className={`${style.color} relative z-10`} />
+                          <Gift size={40} className={`sm:w-16 sm:h-16 ${style.color} relative z-10`} />
                         )}
                       </div>
                     </div>
                     
                     <div className="mt-auto relative z-10 flex flex-col items-center">
-                      <h3 className={`font-display font-bold text-xl mb-2 ${style.color}`}>{box.name}</h3>
-                      <p className="text-sm text-slate-400 line-clamp-3 mb-6 min-h-[40px]">{box.description}</p>
+                      <h3 className={`font-display font-bold text-sm sm:text-xl mb-1 sm:mb-2 ${style.color}`}>{box.name}</h3>
+                      <p className="text-[10px] sm:text-sm text-slate-400 line-clamp-2 sm:line-clamp-3 mb-3 sm:mb-6 min-h-[30px] sm:min-h-[40px]">{box.description}</p>
                       
-                      <div className={`w-full ${style.priceBg} rounded-xl p-3 border mb-4`}>
-                        <p className={`text-xs mb-0.5 opacity-80 ${style.color}`}>Valor da Box</p>
-                        <p className={`font-display font-bold text-2xl ${style.color}`}>
+                      <div className={`w-full ${style.priceBg} rounded-lg sm:rounded-xl p-2 sm:p-3 border mb-2 sm:mb-4`}>
+                        <p className={`text-[10px] sm:text-xs mb-0.5 opacity-80 ${style.color}`}>Valor</p>
+                        <p className={`font-display font-bold text-sm sm:text-2xl ${style.color}`}>
                           {formatCurrency(box.price ?? 0)}
                         </p>
                       </div>
 
                       <button
-                        className={`w-full py-3 rounded-xl text-base font-bold transition-all ${style.btn} relative z-20`}
+                        className={`w-full py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-base font-bold transition-all ${style.btn} relative z-20`}
                         onClick={(e) => {
                           e.stopPropagation()
                           handleBuyClick(box)
                         }}
                       >
-                        Comprar Box
+                        Comprar
                       </button>
                     </div>
                   </div>

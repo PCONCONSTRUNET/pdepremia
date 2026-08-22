@@ -51,7 +51,7 @@ export default function Double() {
   const [timeOffset, setTimeOffset] = useState<number>(0)
   const [betAmount, setBetAmount] = useState<string>('')
   const [selectedColor, setSelectedColor] = useState<ColorType | null>(null)
-  const [activeBets, setActiveBets] = useState<{ amount: number, color: ColorType, user: string, avatar: string, finalAmount?: number }[]>([])
+  const [activeBets, setActiveBets] = useState<{ amount: number, color: ColorType, user: string, avatar: string, finalAmount?: number, isFreeSpin?: boolean }[]>([])
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
   const [spinDuration, setSpinDuration] = useState(3800)
   const [lastResultColor, setLastResultColor] = useState<ColorType | null>(null)
@@ -230,9 +230,17 @@ export default function Double() {
       return
     }
 
-    const amount = parseBetAmount(betAmount)
+    let amount = parseBetAmount(betAmount)
+    if (useFreeSpin) {
+      amount = Number((profile as any).double_free_spins_value || 0)
+    }
+
     if (isNaN(amount) || amount <= 0) {
       toast.error('Insira uma quantia válida!')
+      return
+    }
+    if (!useFreeSpin && amount > 2300) {
+      toast.error('Aposta máxima é R$ 2.300,00!')
       return
     }
     
@@ -243,6 +251,14 @@ export default function Double() {
     }
     if (activeBets.some(b => b.color === selectedColor)) {
       toast.error('Você já apostou nesta cor!')
+      return
+    }
+    if (useFreeSpin && activeBets.length > 0) {
+      toast.error('Você não pode usar giros grátis se já tiver outra aposta na mesma rodada!')
+      return
+    }
+    if (!useFreeSpin && activeBets.some(b => b.isFreeSpin)) {
+      toast.error('Você já usou um giro grátis nesta rodada, aguarde a próxima!')
       return
     }
     if (activeBets.length >= 2) {
@@ -265,7 +281,8 @@ export default function Double() {
         amount,
         color: selectedColor,
         user: profile.full_name || 'Jogador',
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`
+        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.id}`,
+        isFreeSpin: useFreeSpin
       }])
       
       // Atualização visual instantânea
@@ -354,14 +371,6 @@ export default function Double() {
       })
       
       if (activeBets.length > 0) {
-        if (totalWon > 0) {
-          const currentProfile = useAuthStore.getState().profile
-          if (currentProfile) {
-            const currentBal = Number(currentProfile.balance || 0)
-            useAuthStore.getState().setProfile({ ...currentProfile, balance: currentBal + totalWon })
-          }
-        }
-        
         setActiveBets(updatedBets)
       }
       
@@ -395,12 +404,12 @@ export default function Double() {
                 {Number((profile as any)?.double_free_spins_count || 0) > 0 && (
                   <button 
                     onClick={() => setUseFreeSpin(!useFreeSpin)}
-                    className={`flex items-center gap-2 px-2 py-1 rounded transition-colors ${useFreeSpin ? 'bg-brand-500/20 border border-brand-500/50' : 'bg-surface-800 border border-surface-700 hover:bg-surface-700'}`}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 ${useFreeSpin ? 'bg-gradient-to-r from-brand-600 to-brand-500 border border-brand-400 shadow-[0_0_15px_rgba(99,102,241,0.3)] transform scale-[1.02]' : 'bg-surface-800 border border-surface-600 hover:bg-surface-700 hover:border-surface-500'}`}
                   >
-                    <div className={`w-3 h-3 rounded-full flex items-center justify-center border ${useFreeSpin ? 'bg-brand-500 border-brand-500' : 'border-slate-500'}`}>
-                      {useFreeSpin && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                    <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center border-2 ${useFreeSpin ? 'bg-white border-white shadow-sm' : 'border-slate-500 bg-transparent'}`}>
+                      {useFreeSpin && <div className="w-1.5 h-1.5 bg-brand-600 rounded-full"></div>}
                     </div>
-                    <span className={`text-xs font-medium ${useFreeSpin ? 'text-brand-400' : 'text-slate-400'}`}>
+                    <span className={`text-xs font-bold tracking-wide ${useFreeSpin ? 'text-white drop-shadow-md' : 'text-slate-300'}`}>
                       Giro Grátis ({(profile as any).double_free_spins_count}x R$ {Number((profile as any).double_free_spins_value || 0).toFixed(2)})
                     </span>
                   </button>
@@ -417,10 +426,10 @@ export default function Double() {
                   className={`w-full bg-[#0F1317] border border-surface-800 rounded-xl py-4 pl-[45px] pr-24 text-white font-medium text-left transition-colors focus:outline-none focus:border-brand-500 ${useFreeSpin ? 'opacity-70 cursor-not-allowed' : ''}`}
                 />
                 <div className="absolute right-2 flex items-center gap-1">
-                  <button onClick={handleHalf} className="px-3 py-2 bg-[#2B3139] hover:bg-surface-600 rounded-lg text-xs text-white font-medium transition-colors border border-surface-700">
+                  <button onClick={handleHalf} disabled={useFreeSpin} className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors border ${useFreeSpin ? 'bg-surface-800 text-slate-500 border-surface-700 cursor-not-allowed' : 'bg-[#2B3139] hover:bg-surface-600 text-white border-surface-700'}`}>
                     ½
                   </button>
-                  <button onClick={handleDouble} className="px-3 py-2 bg-[#2B3139] hover:bg-surface-600 rounded-lg text-xs text-white font-medium transition-colors border border-surface-700">
+                  <button onClick={handleDouble} disabled={useFreeSpin} className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors border ${useFreeSpin ? 'bg-surface-800 text-slate-500 border-surface-700 cursor-not-allowed' : 'bg-[#2B3139] hover:bg-surface-600 text-white border-surface-700'}`}>
                     2x
                   </button>
                 </div>

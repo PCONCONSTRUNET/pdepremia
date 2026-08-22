@@ -5,9 +5,9 @@ export function Footer() {
   return (
     <footer className="bg-surface-900 border-t border-white/5 mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="flex flex-col lg:flex-row gap-10 lg:gap-8">
           {/* Brand */}
-          <div className="lg:col-span-1">
+          <div className="lg:w-1/4 flex flex-col items-start">
             <Link to="/" className="flex items-center mb-4">
               <img 
                 src="/logo-rodape.png" 
@@ -15,10 +15,10 @@ export function Footer() {
                 className="h-12 w-auto object-contain transition-transform duration-300 hover:scale-105" 
               />
             </Link>
-            <p className="text-slate-500 text-sm leading-relaxed mb-4">
+            <p className="text-slate-500 text-sm leading-relaxed mb-4 max-w-sm">
               Plataforma de sorteios promocionais com premiações instantâneas e roletas transparentes.
             </p>
-            <div className="flex gap-3 mb-4">
+            <div className="flex gap-3 mb-5">
               <a
                 href="https://www.instagram.com/pdepremia/"
                 target="_blank"
@@ -55,69 +55,72 @@ export function Footer() {
             </a>
           </div>
 
-          {/* Navegação */}
-          <div>
-            <h4 className="text-white font-semibold text-sm mb-4">Navegação</h4>
-            <ul className="space-y-2.5">
-              {[
-                { to: '/', label: 'Início' },
-                { to: '/ganhadores', label: 'Ganhadores' },
-                { to: '/transparencia', label: 'Transparência' },
-                { to: '/double', label: 'Double' },
-              ].map((link) => (
-                <li key={link.to}>
-                  <Link
-                    to={link.to}
-                    className="text-slate-500 hover:text-slate-300 text-sm transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {/* Links Grid */}
+          <div className="lg:w-3/4 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-8">
+            {/* Navegação */}
+            <div>
+              <h4 className="text-white font-semibold text-sm mb-4">Navegação</h4>
+              <ul className="space-y-2.5">
+                {[
+                  { to: '/', label: 'Início' },
+                  { to: '/ganhadores', label: 'Ganhadores' },
+                  { to: '/transparencia', label: 'Transparência' },
+                  { to: '/double', label: 'Double' },
+                ].map((link) => (
+                  <li key={link.to}>
+                    <Link
+                      to={link.to}
+                      className="text-slate-500 hover:text-slate-300 text-sm transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-          {/* Conta */}
-          <div>
-            <h4 className="text-white font-semibold text-sm mb-4">Minha Conta</h4>
-            <ul className="space-y-2.5">
-              {[
-                { to: '/login', label: 'Entrar' },
-                { to: '/cadastro', label: 'Criar Conta' },
-                { to: '/meus-bilhetes', label: 'Meus Bilhetes' },
-                { to: '/meus-premios', label: 'Meus Prêmios' },
-              ].map((link) => (
-                <li key={link.to}>
-                  <Link
-                    to={link.to}
-                    className="text-slate-500 hover:text-slate-300 text-sm transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+            {/* Conta */}
+            <div>
+              <h4 className="text-white font-semibold text-sm mb-4">Minha Conta</h4>
+              <ul className="space-y-2.5">
+                {[
+                  { to: '/login', label: 'Entrar' },
+                  { to: '/cadastro', label: 'Criar Conta' },
+                  { to: '/meus-bilhetes', label: 'Meus Bilhetes' },
+                  { to: '/meus-premios', label: 'Meus Prêmios' },
+                ].map((link) => (
+                  <li key={link.to}>
+                    <Link
+                      to={link.to}
+                      className="text-slate-500 hover:text-slate-300 text-sm transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-          {/* Legal */}
-          <div>
-            <h4 className="text-white font-semibold text-sm mb-4">Legal</h4>
-            <ul className="space-y-2.5">
-              {[
-                { to: '/termos', label: 'Termos de Uso' },
-                { to: '/privacidade', label: 'Privacidade' },
-                { to: '/transparencia', label: 'Auditoria' },
-              ].map((link) => (
-                <li key={link.to}>
-                  <Link
-                    to={link.to}
-                    className="text-slate-500 hover:text-slate-300 text-sm transition-colors flex items-center gap-1"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            {/* Legal */}
+            <div className="col-span-2 sm:col-span-1">
+              <h4 className="text-white font-semibold text-sm mb-4">Legal</h4>
+              <ul className="space-y-2.5">
+                {[
+                  { to: '/termos', label: 'Termos de Uso' },
+                  { to: '/privacidade', label: 'Privacidade' },
+                  { to: '/transparencia', label: 'Auditoria' },
+                ].map((link) => (
+                  <li key={link.to}>
+                    <Link
+                      to={link.to}
+                      className="text-slate-500 hover:text-slate-300 text-sm transition-colors flex items-center gap-1"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
 

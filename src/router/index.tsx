@@ -17,6 +17,7 @@ const Transparency = lazy(() => import('@/pages/public/Transparency'))
 const Terms = lazy(() => import('@/pages/public/Terms'))
 const Privacy = lazy(() => import('@/pages/public/Privacy'))
 const Profile = lazy(() => import('@/pages/public/Profile'))
+const Rewards = lazy(() => import('@/pages/public/Rewards'))
 const WheelTest = lazy(() => import('@/pages/public/WheelTest'))
 const DailyWheel = lazy(() => import('@/pages/public/DailyWheel'))
 const OpenBox = lazy(() => import('@/pages/public/OpenBox'))
@@ -97,6 +98,7 @@ const router = createBrowserRouter([
           { path: '/abrir-box/:orderId', element: <Suspense fallback={<Fallback />}><OpenBox /></Suspense> },
           { path: '/meus-bilhetes', element: <Suspense fallback={<Fallback />}><MyTickets /></Suspense> },
           { path: '/meus-premios', element: <Suspense fallback={<Fallback />}><MyPrizes /></Suspense> },
+          { path: '/recompensas', element: <Suspense fallback={<Fallback />}><Rewards /></Suspense> },
         ],
       },
     ],

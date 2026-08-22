@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { maskCurrency, formatCurrency } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
+import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
 
 interface DepositModalProps {
@@ -43,8 +44,14 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
         .eq('order_id', orderId)
         .single()
       
-      if (data?.status === 'paid' || data?.status === 'completed') {
+      if (data?.status === 'paid' || data?.status === 'completed' || data?.status === 'confirmed') {
         toast.success('🎉 Pagamento recebido com sucesso!')
+        if (user) {
+          const { data: updatedProfile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+          if (updatedProfile) {
+            useAuthStore.getState().setProfile(updatedProfile)
+          }
+        }
         onClose()
       } else if (data?.status === 'rejected' || data?.status === 'failed') {
         toast.error('❌ Pagamento rejeitado ou expirado.')

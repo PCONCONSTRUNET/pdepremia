@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, User, Mail, Phone, Calendar, ShoppingCart, Ticket, Trophy, DollarSign, Activity, Check, X, ShieldCheck, AlertCircle, RefreshCw, Wallet, Plus } from 'lucide-react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { ArrowLeft, User, Mail, Phone, Calendar, ShoppingCart, Ticket, Trophy, DollarSign, Activity, Check, X, ShieldCheck, AlertCircle, RefreshCw, Wallet, Plus, Gift, Zap, RotateCcw, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { supabase } from '@/lib/supabase'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
@@ -10,9 +10,14 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { LoadingPage, EmptyState } from '@/components/common/Loading'
 import { UserAuditModal } from '@/components/admin/UserAuditModal'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function AdminUserDetail() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const { user: currentUser } = useAuth()
+  const isMasterAdmin = currentUser?.email === 'pdepremia@gmail.com'
   const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'tickets' | 'prizes'>('overview')
   const [showAuditModal, setShowAuditModal] = useState(false)
   const [kycDocUrl, setKycDocUrl] = useState<string | null>(null)
@@ -25,6 +30,17 @@ export default function AdminUserDetail() {
   const [showAddBalanceModal, setShowAddBalanceModal] = useState(false)
   const [balanceAmount, setBalanceAmount] = useState('')
   const [isAddingBalance, setIsAddingBalance] = useState(false)
+  // Bonus state
+  const [showBonusModal, setShowBonusModal] = useState(false)
+  const [bonusType, setBonusType] = useState<'free_spins' | 'cashback' | 'double_xp'>('free_spins')
+  const [bonusSpinsQty, setBonusSpinsQty] = useState<number>(5)
+  const [bonusSpinsValue, setBonusSpinsValue] = useState<string>('10.00')
+  const [bonusCashbackValue, setBonusCashbackValue] = useState<string>('')
+  const [isGrantingBonus, setIsGrantingBonus] = useState(false)
+  // Hard delete state
+  const [showHardDeleteModal, setShowHardDeleteModal] = useState(false)
+  const [hardDeleteConfirm, setHardDeleteConfirm] = useState('')
+  const [isHardDeleting, setIsHardDeleting] = useState(false)
   // KYC Rejection state
   const [showKycRejectModal, setShowKycRejectModal] = useState(false)
   const [kycRejectionReason, setKycRejectionReason] = useState('Identificação ilegível (foto embaçada/escura)')
@@ -77,7 +93,7 @@ export default function AdminUserDetail() {
         .eq('id', profile!.id)
       if (error) throw error
       toast.success('Usuário aprovado com sucesso!')
-      window.location.reload()
+      queryClient.invalidateQueries({ queryKey: ['admin', 'user', id] })
     } catch (error: any) {
       toast.error('Erro ao atualizar: ' + error.message)
     }
@@ -95,7 +111,7 @@ export default function AdminUserDetail() {
         .eq('id', profile!.id)
       if (error) throw error
       toast.success('Documento rejeitado com sucesso!')
-      window.location.reload()
+      queryClient.invalidateQueries({ queryKey: ['admin', 'user', id] })
     } catch (error: any) {
       toast.error('Erro ao rejeitar: ' + error.message)
     } finally {
@@ -111,7 +127,7 @@ export default function AdminUserDetail() {
         .eq('id', profile!.id)
       if (error) throw error
       toast.success('Reenvio liberado para o usuário!')
-      window.location.reload()
+      queryClient.invalidateQueries({ queryKey: ['admin', 'user', id] })
     } catch (error: any) {
       toast.error('Erro ao liberar: ' + error.message)
     }
@@ -131,11 +147,52 @@ export default function AdminUserDetail() {
       toast.success('Saldo adicionado com sucesso!')
       setShowAddBalanceModal(false)
       setBalanceAmount('')
-      window.location.reload()
+      queryClient.invalidateQueries({ queryKey: ['admin', 'user', id] })
     } catch (error: any) {
       toast.error('Erro ao adicionar saldo: ' + error.message)
     } finally {
       setIsAddingBalance(false)
+    }
+  }
+
+  const handleGrantBonus = async () => {
+    setIsGrantingBonus(true)
+    try {
+      const { error } = await supabase.rpc('admin_grant_bonus' as any, {
+        p_target_user_id: profile!.id,
+        p_bonus_type: bonusType,
+        p_value: bonusType === 'free_spins' ? Number(bonusSpinsValue) : bonusType === 'cashback' ? Number(bonusCashbackValue) : 0,
+        p_quantity: bonusType === 'free_spins' ? bonusSpinsQty : 0,
+      })
+      if (error) throw error
+      toast.success('Bônus concedido com sucesso! O usuário foi notificado.')
+      setShowBonusModal(false)
+      queryClient.invalidateQueries({ queryKey: ['admin', 'user', id] })
+    } catch (error: any) {
+      toast.error('Erro ao conceder bônus: ' + error.message)
+    } finally {
+      setIsGrantingBonus(false)
+    }
+  }
+
+  const handleHardDelete = async () => {
+    if (hardDeleteConfirm !== 'EXCLUIR') {
+      toast.error('Digite EXCLUIR para confirmar.')
+      return
+    }
+    setIsHardDeleting(true)
+    try {
+      const { data, error } = await supabase.rpc('admin_hard_delete_user' as any, {
+        p_target_user_id: profile!.id
+      })
+      if (error) throw error
+      toast.success('Usuário excluído permanentemente do sistema.')
+      navigate('/admin/usuarios')
+    } catch (error: any) {
+      toast.error('Erro ao excluir: ' + error.message)
+    } finally {
+      setIsHardDeleting(false)
+      setShowHardDeleteModal(false)
     }
   }
 
@@ -231,6 +288,17 @@ export default function AdminUserDetail() {
           >
             Auditoria
           </Button>
+          {isMasterAdmin && (
+            <Button
+              variant="outline"
+              leftIcon={<Trash2 size={16} />}
+              onClick={() => { setHardDeleteConfirm(''); setShowHardDeleteModal(true) }}
+              className="text-red-400 border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40"
+              title="Excluir usuário permanentemente"
+            >
+              Excluir
+            </Button>
+          )}
         </div>
       </div>
 
@@ -294,6 +362,38 @@ export default function AdminUserDetail() {
               <p className="text-lg text-white font-bold">{totalPrizes}</p>
             </Card>
           </div>
+
+          {/* Bonus Grant Card */}
+          <Card className="space-y-3">
+            <h3 className="text-white font-bold flex items-center gap-2 text-sm">
+              <Gift size={16} className="text-brand-400" />
+              Conceder Bônus
+            </h3>
+            <p className="text-xs text-slate-500">Atribua benefícios manualmente a este usuário.</p>
+            <div className="grid grid-cols-1 gap-2">
+              <button
+                onClick={() => { setBonusType('free_spins'); setShowBonusModal(true) }}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-surface-700/50 hover:bg-brand-500/10 border border-surface-600 hover:border-brand-500/30 text-slate-300 hover:text-brand-400 text-sm transition-all text-left"
+              >
+                <RotateCcw size={15} className="text-brand-400 shrink-0" />
+                Giros Grátis (Double)
+              </button>
+              <button
+                onClick={() => { setBonusType('cashback'); setShowBonusModal(true) }}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-surface-700/50 hover:bg-green-500/10 border border-surface-600 hover:border-green-500/30 text-slate-300 hover:text-green-400 text-sm transition-all text-left"
+              >
+                <Wallet size={15} className="text-green-400 shrink-0" />
+                Cashback em Saldo
+              </button>
+              <button
+                onClick={() => { setBonusType('double_xp'); setShowBonusModal(true) }}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-surface-700/50 hover:bg-yellow-500/10 border border-surface-600 hover:border-yellow-500/30 text-slate-300 hover:text-yellow-400 text-sm transition-all text-left"
+              >
+                <Zap size={15} className="text-yellow-400 shrink-0" />
+                Dobrar XP do Usuário
+              </button>
+            </div>
+          </Card>
 
           {/* KYC Review Section */}
           {(profile.kyc_status === 'pending_review' || profile.kyc_status === 'approved' || profile.kyc_status === 'rejected_locked' || profile.kyc_status === 'none' || profile.kyc_status === 'requested') && (
@@ -664,6 +764,193 @@ export default function AdminUserDetail() {
                 disabled={!balanceAmount || Number(balanceAmount) <= 0}
               >
                 Confirmar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bonus Grant Modal */}
+      {showBonusModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-surface-800 rounded-2xl w-full max-w-md border border-white/5 overflow-hidden shadow-2xl">
+            <div className="p-6 border-b border-white/5 flex justify-between items-center bg-surface-900/50">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <Gift className="text-brand-400" size={20} />
+                Conceder Bônus
+              </h3>
+              <button onClick={() => setShowBonusModal(false)} className="text-slate-400 hover:text-white transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              {/* Tipo de bônus */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-400">Tipo de Bônus</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['free_spins', 'cashback', 'double_xp'] as const).map(t => (
+                    <button
+                      key={t}
+                      onClick={() => setBonusType(t)}
+                      className={`py-2 px-2 rounded-xl text-xs font-medium border transition-all ${
+                        bonusType === t
+                          ? 'bg-brand-500/20 border-brand-500/50 text-brand-400'
+                          : 'bg-surface-700/50 border-surface-600 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {t === 'free_spins' ? '🎰 Giros' : t === 'cashback' ? '💰 Cashback' : '⚡ XP Duplo'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Configuração de Giros Grátis */}
+              {bonusType === 'free_spins' && (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-400">Quantidade de Giros</label>
+                    <div className="grid grid-cols-4 gap-2">
+                      {[2, 5, 10, 15].map(qty => (
+                        <button
+                          key={qty}
+                          onClick={() => setBonusSpinsQty(qty)}
+                          className={`py-2 rounded-xl text-sm font-bold border transition-all ${
+                            bonusSpinsQty === qty
+                              ? 'bg-brand-500/20 border-brand-500/50 text-brand-400'
+                              : 'bg-surface-700/50 border-surface-600 text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          {qty}x
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-400">Valor por Giro (R$)</label>
+                    <input
+                      type="number" min="0.01" step="0.01"
+                      value={bonusSpinsValue}
+                      onChange={e => setBonusSpinsValue(e.target.value)}
+                      className="w-full p-3 bg-surface-900 rounded-xl border border-surface-700 text-white focus:border-brand-500 focus:outline-none transition-colors"
+                      placeholder="Ex: 10.00"
+                    />
+                    <p className="text-xs text-slate-500">Sugestões: R$ 5,00 · R$ 10,00 · R$ 25,00 · R$ 50,00</p>
+                  </div>
+                  <div className="bg-surface-900/60 rounded-xl p-3 border border-surface-700">
+                    <p className="text-sm text-slate-300">
+                      Usuário receberá <span className="text-brand-400 font-bold">{bonusSpinsQty} giro(s)</span> de
+                      <span className="text-brand-400 font-bold"> R$ {Number(bonusSpinsValue || 0).toFixed(2)}</span> cada
+                      no Double.
+                    </p>
+                  </div>
+                </>
+              )}
+
+              {/* Configuração de Cashback */}
+              {bonusType === 'cashback' && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-400">Valor do Cashback (R$)</label>
+                  <input
+                    type="number" min="0.01" step="0.01"
+                    value={bonusCashbackValue}
+                    onChange={e => setBonusCashbackValue(e.target.value)}
+                    className="w-full p-3 bg-surface-900 rounded-xl border border-surface-700 text-white focus:border-brand-500 focus:outline-none transition-colors"
+                    placeholder="Ex: 20.00"
+                  />
+                  <p className="text-xs text-slate-500">O valor será creditado diretamente na carteira do usuário.</p>
+                </div>
+              )}
+
+              {/* XP Duplo */}
+              {bonusType === 'double_xp' && (
+                <div className="bg-yellow-500/10 rounded-xl p-4 border border-yellow-500/20">
+                  <div className="flex items-center gap-3">
+                    <Zap size={24} className="text-yellow-400 shrink-0" />
+                    <div>
+                      <p className="text-white font-medium text-sm">XP Atual: <span className="text-yellow-400 font-bold">{(profile as any)?.xp || 0} XP</span></p>
+                      <p className="text-slate-400 text-xs mt-0.5">Após o bônus: <span className="text-yellow-300 font-bold">{((profile as any)?.xp || 0) * 2} XP</span></p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-white/5 flex justify-end gap-3 bg-surface-900/50">
+              <Button variant="outline" onClick={() => setShowBonusModal(false)}>Cancelar</Button>
+              <Button
+                variant="primary"
+                onClick={handleGrantBonus}
+                isLoading={isGrantingBonus}
+                disabled={
+                  (bonusType === 'free_spins' && (!bonusSpinsValue || Number(bonusSpinsValue) <= 0)) ||
+                  (bonusType === 'cashback' && (!bonusCashbackValue || Number(bonusCashbackValue) <= 0))
+                }
+              >
+                Confirmar Bônus
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Hard Delete Modal — Master Admin Only */}
+      {showHardDeleteModal && isMasterAdmin && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+          <div className="bg-surface-800 rounded-2xl w-full max-w-md border border-red-500/30 overflow-hidden shadow-2xl">
+            <div className="p-6 border-b border-red-500/20 flex justify-between items-center bg-red-950/30">
+              <h3 className="text-xl font-bold text-red-400 flex items-center gap-2">
+                <Trash2 size={20} />
+                Excluir Usuário Permanentemente
+              </h3>
+              <button onClick={() => setShowHardDeleteModal(false)} className="text-slate-400 hover:text-white transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div className="bg-red-950/40 border border-red-500/30 rounded-xl p-4 space-y-2">
+                <p className="text-red-400 font-bold text-sm flex items-center gap-2">
+                  <AlertCircle size={16} /> Ação irreversível
+                </p>
+                <p className="text-slate-300 text-sm">
+                  Todos os dados de <span className="text-white font-bold">{profile?.full_name}</span> serão apagados permanentemente:
+                </p>
+                <ul className="text-slate-400 text-xs space-y-1 list-disc list-inside">
+                  <li>Pedidos, bilhetes e pagamentos</li>
+                  <li>Transações de carteira e saques</li>
+                  <li>Histórico de apostas (Double, Roleta, Boxes)</li>
+                  <li>Mensagens de suporte e notificações</li>
+                  <li>Conta de autenticação</li>
+                </ul>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-400">
+                  Digite <span className="text-red-400 font-bold font-mono">EXCLUIR</span> para confirmar
+                </label>
+                <input
+                  type="text"
+                  value={hardDeleteConfirm}
+                  onChange={e => setHardDeleteConfirm(e.target.value)}
+                  className="w-full p-3 bg-surface-900 rounded-xl border border-red-500/30 text-white focus:border-red-500 focus:outline-none transition-colors font-mono tracking-widest"
+                  placeholder="EXCLUIR"
+                  autoComplete="off"
+                />
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-red-500/20 flex justify-end gap-3 bg-red-950/20">
+              <Button variant="outline" onClick={() => setShowHardDeleteModal(false)}>Cancelar</Button>
+              <Button
+                variant="primary"
+                onClick={handleHardDelete}
+                isLoading={isHardDeleting}
+                disabled={hardDeleteConfirm !== 'EXCLUIR'}
+                className="bg-red-600 hover:bg-red-700 border-red-600 text-white"
+                leftIcon={<Trash2 size={16} />}
+              >
+                Excluir Permanentemente
               </Button>
             </div>
           </div>

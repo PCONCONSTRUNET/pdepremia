@@ -6,6 +6,7 @@ import type { Prize } from './MysteryBoxGrid';
 interface HorizontalRouletteProps {
   prizes: Prize[];
   isSpinning: boolean;
+  targetPrize?: Prize | null;
   onFinish?: (prize: Prize) => void;
 }
 
@@ -13,7 +14,7 @@ const TOTAL_ITEMS = 100;
 const WINNER_IDX = 70;
 const GAP = 16; // gap-4 = 16px
 
-export function HorizontalRoulette({ prizes, isSpinning, onFinish }: HorizontalRouletteProps) {
+export function HorizontalRoulette({ prizes, isSpinning, targetPrize, onFinish }: HorizontalRouletteProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const firstItemRef = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);
@@ -94,7 +95,7 @@ export function HorizontalRoulette({ prizes, isSpinning, onFinish }: HorizontalR
     hasSpunRef.current = true;
     stopIdle();
 
-    const selectedPrize = available[Math.floor(Math.random() * available.length)];
+    const selectedPrize = targetPrize || available[Math.floor(Math.random() * available.length)];
 
     // Place winner at WINNER_IDX
     const newItems = [...items];

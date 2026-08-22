@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
         payerDocument: (payerDocument || "00000000000").replace(/\D/g, ''),
         transactionId: orderId || `order_${Date.now()}`,
         description: description || "Pagamento de Bilhetes/Depósito",
-        projectWebhook: `${supabaseUrl}/functions/v1/misticpay-gateway/webhook` // Webhook dinâmico apontando para nós mesmos
+        projectWebhook: `${supabaseUrl}/functions/v1/misticpay-gateway/webhook?token=${config.cs}` // Webhook dinâmico com Token Seguro
       }
 
       const misticRes = await fetch('https://api.misticpay.com/api/transactions/create', {
@@ -117,6 +117,16 @@ Deno.serve(async (req) => {
 
     // 3. ROTA DE WEBHOOK (Recebe notificação da MisticPay)
     if (path === 'webhook' && req.method === 'POST') {
+      const config = await getMisticPayConfig()
+      const token = url.searchParams.get('token')
+      
+      if (token !== config.cs) {
+        return new Response(JSON.stringify({ error: 'Acesso Negado. Token de webhook inválido.' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
       const payload = await req.json()
       
       console.log('Recebido Webhook MisticPay:', payload)

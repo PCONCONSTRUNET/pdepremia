@@ -16,6 +16,7 @@ export default function DailyWheel() {
   const [cooldownEnd, setCooldownEnd] = useState<Date | null>(null)
   const [timeRemaining, setTimeRemaining] = useState<string>('')
   const [isSpinning, setIsSpinning] = useState(false)
+  const [targetPrize, setTargetPrize] = useState<any>(null)
   const [isDepositOpen, setIsDepositOpen] = useState(false)
 
   const userRank = profile?.rank || 'P Starter'
@@ -95,31 +96,14 @@ export default function DailyWheel() {
 
   const handleFinish = async (prize: any) => {
     setIsSpinning(false)
+    setTargetPrize(null)
     
     if (prize.type === 'balance' && prize.value > 0) {
-      try {
-        const { error } = await (supabase as any).rpc('add_user_balance', { amount: prize.value })
-        if (error) throw error
-        toast.success(`Parabéns! Você ganhou: R$ ${prize.value.toFixed(2)} na carteira!`)
-      } catch (err) {
-        console.error('Erro ao adicionar saldo:', err)
-        toast.error('Erro ao adicionar o saldo. Tente atualizar a página ou contate o suporte.')
-      }
+      toast.success(`Parabéns! Você ganhou: R$ ${prize.value.toFixed(2)} na carteira!`)
     } else if (prize.type === 'empty' || prize.name.toLowerCase().includes('tente')) {
       toast.error(`Que pena! ${prize.name}`)
     } else {
       toast.success(`Parabéns! Você ganhou: ${prize.name}`)
-      // Save reward to user inventory
-      try {
-        await (supabase as any).rpc('add_user_reward', {
-          p_name: prize.name,
-          p_category: prize.category || 'Geral',
-          p_image_url: prize.imageUrl || null,
-          p_source: 'daily_wheel'
-        })
-      } catch (err) {
-        console.error('Erro ao salvar recompensa:', err)
-      }
     }
     
     // Set 24h cooldown
@@ -251,13 +235,24 @@ export default function DailyWheel() {
                 prizes={prizes} 
                 onFinish={handleFinish}
                 isSpinning={isSpinning}
+                targetPrize={targetPrize}
               />
             )}
 
             {!cooldownEnd && !isConfigLoading && (
               <button 
-                onClick={() => {
-                  if (!isSpinning) setIsSpinning(true);
+                onClick={async () => {
+                  if (isSpinning) return;
+                  try {
+                    const { data, error } = await (supabase as any).rpc('spin_daily_wheel')
+                    if (error) throw error;
+                    if (data?.success) {
+                      setTargetPrize(data.prize);
+                      setIsSpinning(true);
+                    }
+                  } catch (err: any) {
+                     toast.error(err.message || 'Erro ao girar a roleta. Tente novamente mais tarde.')
+                  }
                 }}
                 disabled={isSpinning}
                 className="mt-12 bg-brand-500 hover:bg-brand-600 text-white font-display font-bold text-xl px-12 py-4 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95 z-10 relative"

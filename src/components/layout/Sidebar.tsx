@@ -34,8 +34,8 @@ export function Sidebar() {
       group: 'Pessoal',
       items: [
         { icon: Ticket, label: 'Meus Bilhetes', to: '/meus-bilhetes', reqAuth: true },
-        { icon: Trophy, label: 'Meus Prêmios', to: '/perfil?tab=premios', reqAuth: true },
-        { icon: Gift, label: 'Recompensas', to: '/perfil?tab=recompensas', reqAuth: true },
+        { icon: Trophy, label: 'Meus Prêmios', to: '/meus-premios', reqAuth: true },
+        { icon: Gift, label: 'Recompensas', to: '/recompensas', reqAuth: true },
         { icon: TrendingUp, label: 'Progresso', to: '/ranks', reqAuth: true },
       ]
     }
@@ -47,9 +47,9 @@ export function Sidebar() {
         width: isSidebarOpen ? 240 : 64,
       }}
       transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
-      className={`fixed left-0 top-[64px] bottom-0 z-30 bg-surface-950/80 backdrop-blur-xl border-r border-white/5 flex flex-col overflow-y-auto custom-scrollbar overflow-x-hidden transition-transform duration-300 md:translate-x-0 ${!isSidebarOpen ? 'max-md:-translate-x-full' : 'max-md:translate-x-0 max-md:w-[240px]'}`}
+      className={`fixed left-0 top-[64px] bottom-0 z-50 bg-surface-950/80 backdrop-blur-xl border-r border-white/5 flex flex-col overflow-y-auto custom-scrollbar overflow-x-hidden transition-transform duration-300 md:translate-x-0 ${!isSidebarOpen ? 'max-md:-translate-x-full' : 'max-md:translate-x-0 max-md:w-[240px]'}`}
     >
-      <div className="flex-1 py-4 flex flex-col gap-6">
+      <div className="flex-1 py-4 pb-28 md:pb-4 flex flex-col gap-6">
         {navItems.map((group, groupIdx) => {
           // Filter out items that require auth if user is not authenticated
           const visibleItems = group.items.filter(item => !item.reqAuth || isAuthenticated)
@@ -80,7 +80,7 @@ export function Sidebar() {
                       <>
                         <Icon 
                           size={18} 
-                          className={`shrink-0 transition-colors ${isActive ? 'text-brand-400' : 'group-hover:text-slate-300'}`} 
+                          className={`shrink-0 transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-0.5 ${isActive ? 'text-brand-400 scale-110' : 'group-hover:text-brand-300'}`} 
                         />
                         <span 
                           className={`whitespace-nowrap text-sm font-medium transition-opacity duration-200 ${

@@ -150,7 +150,7 @@ function HeroSection() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="w-full lg:w-[350px] shrink-0 block hover:scale-[1.02] transition-transform duration-300"
+            className="hidden lg:block w-full lg:w-[350px] shrink-0 hover:scale-[1.02] transition-transform duration-300"
           >
             <img 
               src="/card telegram.png" 
@@ -218,7 +218,7 @@ function MinigameCardContent({ game }: { game: any }) {
         <Star size={20} className={favorite ? 'fill-yellow-400 text-yellow-400' : 'text-slate-400'} />
       </button>
 
-      <div className="rounded-2xl p-8 h-full flex flex-col items-center text-center border border-white/5 bg-surface-800/80 relative overflow-hidden">
+      <div className="rounded-2xl p-5 sm:p-8 h-full flex flex-col items-center text-center border border-white/5 bg-surface-800/80 relative overflow-hidden">
         {/* Glow Effects */}
         <div className={`absolute -top-24 -right-24 w-48 h-48 rounded-full blur-3xl ${game.theme.glow} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
         
@@ -228,14 +228,14 @@ function MinigameCardContent({ game }: { game: any }) {
           </span>
         )}
         
-        <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mb-6 relative z-10 group-hover:-translate-y-2 transition-transform duration-300 ${game.theme.iconBg}`}>
+        <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 relative z-10 group-hover:-translate-y-2 transition-transform duration-300 ${game.theme.iconBg}`}>
           {game.icon}
         </div>
         
-        <h3 className="text-2xl font-bold text-white mb-3 relative z-10">{game.title}</h3>
-        <p className="text-sm text-slate-400 relative z-10">{game.description}</p>
+        <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 sm:mb-3 relative z-10">{game.title}</h3>
+        <p className="text-xs sm:text-sm text-slate-400 relative z-10">{game.description}</p>
         
-        <div className="mt-8 relative z-10 w-full mt-auto pt-4">
+        <div className="mt-5 sm:mt-8 relative z-10 w-full mt-auto pt-3 sm:pt-4">
           <div className="flex items-center justify-center gap-2 text-sm font-bold text-white group-hover:text-brand-400 transition-colors">
             Jogar Agora <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
           </div>
@@ -459,7 +459,7 @@ function CampaignsSection() {
                 onClick={() => navigate('/sorteios')}
               >
                 <div className="rounded-2xl flex-1 flex flex-col bg-surface-800/80 relative overflow-hidden border border-white/5">
-                  <div className="h-48 relative overflow-hidden bg-surface-900 flex items-center justify-center">
+                  <div className="h-32 sm:h-48 relative overflow-hidden bg-surface-900 flex items-center justify-center">
                     {campaign.banner_url ? (
                       <img 
                         src={campaign.banner_url} 
@@ -468,7 +468,7 @@ function CampaignsSection() {
                       />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-brand-500/20 to-purple-500/20 flex items-center justify-center">
-                        <Gift size={48} className="text-brand-400/50" />
+                        <Gift size={40} className="text-brand-400/50 sm:w-12 sm:h-12" />
                       </div>
                     )}
                     <div className="absolute top-3 right-3">
@@ -482,8 +482,8 @@ function CampaignsSection() {
                     </div>
                   </div>
                   
-                  <div className="p-6 flex-1 flex flex-col">
-                    <h3 className="font-display font-bold text-xl text-white mb-2 line-clamp-2">
+                  <div className="p-4 sm:p-6 flex-1 flex flex-col">
+                    <h3 className="font-display font-bold text-lg sm:text-xl text-white mb-2 line-clamp-2">
                       {campaign.name}
                     </h3>
                     <p className="text-sm text-slate-400 line-clamp-2 mb-6 flex-1">
