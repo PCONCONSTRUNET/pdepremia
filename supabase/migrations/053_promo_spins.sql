@@ -1,6 +1,11 @@
 -- Adiciona a coluna available_promo_spins à tabela profiles
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS available_promo_spins integer DEFAULT 0;
 
+-- Atualiza a constraint de tipos de recompensa válidos
+ALTER TABLE public.promo_codes DROP CONSTRAINT IF EXISTS promo_codes_reward_type_check;
+ALTER TABLE public.promo_codes ADD CONSTRAINT promo_codes_reward_type_check 
+CHECK (reward_type = ANY (ARRAY['xp_multiplier'::text, 'roulette'::text, 'daily_spin'::text, 'box'::text, 'cashback'::text, 'balance'::text]));
+
 -- Atualiza a função redeem_promo_code para reconhecer 'daily_spin'
 CREATE OR REPLACE FUNCTION public.redeem_promo_code(p_code text, p_user_id uuid)
  RETURNS jsonb
