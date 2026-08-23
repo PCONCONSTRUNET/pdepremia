@@ -169,11 +169,11 @@ export default function DailyWheel() {
             </div>
           )}
 
-          {isCheckingDeposit && !hasPromoSpins ? (
+          {isCheckingDeposit && !hasPromoSpins && !isSpinning ? (
             <div className="absolute inset-0 z-30 bg-surface-900/80 backdrop-blur-sm flex items-center justify-center">
               <span className="text-slate-400 font-medium animate-pulse">Verificando elegibilidade...</span>
             </div>
-          ) : !hasRecentDeposit && !hasPromoSpins ? (
+          ) : !hasRecentDeposit && !hasPromoSpins && !isSpinning ? (
             <div className="absolute inset-0 z-30 bg-surface-900/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
               <div className="w-20 h-20 rounded-full bg-surface-800 border border-surface-700 flex items-center justify-center mb-6 shadow-xl relative">
                 <div className="absolute inset-0 bg-red-500/20 rounded-full animate-ping opacity-50"></div>
@@ -192,7 +192,7 @@ export default function DailyWheel() {
                 Fazer Depósito Agora
               </button>
             </div>
-          ) : cooldownEnd && !hasPromoSpins ? (
+          ) : cooldownEnd && !hasPromoSpins && !isSpinning ? (
             <div className="absolute inset-0 z-20 bg-surface-900/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
               <div className="w-20 h-20 rounded-full bg-surface-800 border border-surface-700 flex items-center justify-center mb-6 shadow-xl">
                 <Clock className="text-amber-500" size={32} />
