@@ -320,7 +320,9 @@ export default function AdminAffiliates() {
                             {affiliate.affiliate_code}
                           </span>
                         </div>
-                        <p className="text-slate-400 text-sm">{affiliate.email}</p>
+                        {affiliate.email && !affiliate.email.endsWith('@users.premiaja.com') && (
+                          <p className="text-slate-400 text-sm">{affiliate.email}</p>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-6 text-center">
@@ -539,7 +541,9 @@ function AffiliateReferralsModal({
               <div key={ref.user_id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-surface-800 rounded-lg border border-surface-700">
                 <div>
                   <p className="text-white font-bold text-sm">{ref.full_name}</p>
-                  <p className="text-slate-400 text-xs">{ref.email}</p>
+                  {ref.email && !ref.email.endsWith('@users.premiaja.com') && (
+                    <p className="text-slate-400 text-xs">{ref.email}</p>
+                  )}
                   <p className="text-slate-500 text-[10px] mt-1">{formatDateTime(ref.created_at)}</p>
                 </div>
                 <div className="mt-2 sm:mt-0 text-right">

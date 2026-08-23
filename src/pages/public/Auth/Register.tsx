@@ -33,7 +33,7 @@ export default function Register() {
 
     const cleanPhone = data.phone.replace(/\D/g, '')
     const cleanCpf = data.cpf.replace(/\D/g, '')
-    const loginEmail = `${cleanPhone}@users.premiaja.com`
+    const loginEmail = data.email
 
     // Pre-check for duplicate CPF or Phone
     const { data: isDuplicate, error: rpcError } = await (supabase as any).rpc('check_duplicate_user', {
@@ -145,6 +145,16 @@ export default function Register() {
                   e.target.value = maskCPF(e.target.value)
                 }
               })}
+            />
+
+            <Input
+              label="E-mail"
+              type="email"
+              placeholder="seu@email.com"
+              leftElement={<Mail size={16} />}
+              error={errors.email?.message}
+              required
+              {...register('email')}
             />
 
             <Input

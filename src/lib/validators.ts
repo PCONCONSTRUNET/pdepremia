@@ -12,6 +12,7 @@ import { validateCPF, calculateAge } from './utils'
 export const registerSchema = z
   .object({
     full_name: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
+    email: z.string().email('E-mail inválido'),
     cpf: z.string()
       .regex(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/, 'Formato de CPF inválido')
       .refine((val) => validateCPF(val), { message: 'CPF inválido (matematicamente incorreto)' }),

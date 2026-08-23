@@ -27,12 +27,18 @@ export default function Login() {
   const from = (location.state as { from?: Location })?.from?.pathname || '/'
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, '')
-    if (value.length > 11) value = value.slice(0, 11)
-    if (value.length === 11) {
-      value = value.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3")
-    } else if (value.length === 10) {
-      value = value.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3")
+    let value = e.target.value
+    // Se só tiver números e caracteres de formatação de telefone, aplicar a máscara
+    if (/^[\d\s()+-]*$/.test(value)) {
+      let digits = value.replace(/\D/g, '')
+      if (digits.length > 11) digits = digits.slice(0, 11)
+      if (digits.length === 11) {
+        value = digits.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3")
+      } else if (digits.length === 10) {
+        value = digits.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3")
+      } else {
+        value = digits
+      }
     }
     setPhone(value)
   }
@@ -40,9 +46,19 @@ export default function Login() {
 
   const handleClientSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const cleanPhone = phone.replace(/\D/g, '')
     
-    if (cleanPhone.length < 10 || clientPassword.length < 6) {
+    let loginEmail = phone.trim()
+    
+    if (!loginEmail.includes('@')) {
+      const cleanPhone = loginEmail.replace(/\D/g, '')
+      if (cleanPhone.length < 10) {
+        toast.error('Preencha os dados corretamente')
+        return
+      }
+      loginEmail = `${cleanPhone}@users.premiaja.com`
+    }
+
+    if (clientPassword.length < 6) {
       toast.error('Preencha os dados corretamente')
       return
     }
@@ -53,7 +69,6 @@ export default function Login() {
     }
 
     setIsSubmitting(true)
-    const loginEmail = `${cleanPhone}@users.premiaja.com`
     
     const { error } = await supabase.auth.signInWithPassword({
       email: loginEmail,
@@ -132,19 +147,19 @@ export default function Login() {
                 className="space-y-4"
               >
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-slate-300">WhatsApp</label>
+                  <label className="text-sm font-medium text-slate-300">E-mail ou WhatsApp</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-500">
-                      <Phone size={16} />
+                      <User size={16} />
                     </div>
                     <input
-                      type="tel"
+                      type="text"
                       required
                       value={phone}
                       onChange={handlePhoneChange}
                       className="w-full bg-surface-900 border border-surface-700 text-white rounded-xl pl-10 pr-4 py-2.5 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors outline-none"
-                      placeholder="(11) 99999-9999"
-                      maxLength={15}
+                      placeholder="seu@email.com ou (11) 99999-9999"
+                      maxLength={100}
                     />
                   </div>
                 </div>
