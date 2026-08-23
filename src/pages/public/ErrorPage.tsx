@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useRouteError, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Home, AlertCircle } from 'lucide-react'
@@ -6,6 +7,16 @@ import { Button } from '@/components/ui/Button'
 export function ErrorPage() {
   const error = useRouteError() as any
   console.error(error)
+
+  useEffect(() => {
+    const errorMsg = error?.message || error?.statusText || ''
+    if (errorMsg.includes('Failed to fetch dynamically imported module') || errorMsg.includes('Importing a module script failed')) {
+      if (!sessionStorage.getItem('chunk_load_retried')) {
+        sessionStorage.setItem('chunk_load_retried', 'true')
+        window.location.reload()
+      }
+    }
+  }, [error])
 
   const is404 = error?.status === 404 || error?.message?.includes('Not Found')
 
