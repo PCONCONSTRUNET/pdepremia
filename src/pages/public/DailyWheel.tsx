@@ -20,6 +20,8 @@ export default function DailyWheel() {
   const [isDepositOpen, setIsDepositOpen] = useState(false)
 
   const userRank = profile?.rank || 'P Starter'
+  const promoSpins = profile?.available_promo_spins || 0
+  const hasPromoSpins = promoSpins > 0
 
   const { data: wheelConfig, isLoading: isConfigLoading } = useQuery({
     queryKey: ['daily_wheel_prizes'],
@@ -161,11 +163,17 @@ export default function DailyWheel() {
           {/* Decorative background glow */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-brand-500/5 rounded-full blur-[100px] pointer-events-none"></div>
 
-          {isCheckingDeposit ? (
+          {hasPromoSpins && (
+            <div className="absolute top-4 right-4 z-40 bg-brand-500 text-white text-sm font-bold px-4 py-2 rounded-full shadow-[0_0_15px_rgba(var(--brand-500-rgb),0.5)] animate-pulse">
+              {promoSpins} {promoSpins === 1 ? 'Giro Promocional' : 'Giros Promocionais'}
+            </div>
+          )}
+
+          {isCheckingDeposit && !hasPromoSpins ? (
             <div className="absolute inset-0 z-30 bg-surface-900/80 backdrop-blur-sm flex items-center justify-center">
               <span className="text-slate-400 font-medium animate-pulse">Verificando elegibilidade...</span>
             </div>
-          ) : !hasRecentDeposit ? (
+          ) : !hasRecentDeposit && !hasPromoSpins ? (
             <div className="absolute inset-0 z-30 bg-surface-900/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
               <div className="w-20 h-20 rounded-full bg-surface-800 border border-surface-700 flex items-center justify-center mb-6 shadow-xl relative">
                 <div className="absolute inset-0 bg-red-500/20 rounded-full animate-ping opacity-50"></div>
@@ -184,7 +192,7 @@ export default function DailyWheel() {
                 Fazer Depósito Agora
               </button>
             </div>
-          ) : cooldownEnd ? (
+          ) : cooldownEnd && !hasPromoSpins ? (
             <div className="absolute inset-0 z-20 bg-surface-900/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
               <div className="w-20 h-20 rounded-full bg-surface-800 border border-surface-700 flex items-center justify-center mb-6 shadow-xl">
                 <Clock className="text-amber-500" size={32} />
@@ -239,7 +247,7 @@ export default function DailyWheel() {
               />
             )}
 
-            {!cooldownEnd && !isConfigLoading && (
+            {(!cooldownEnd || hasPromoSpins) && !isConfigLoading && (
               <button 
                 onClick={async () => {
                   if (isSpinning) return;

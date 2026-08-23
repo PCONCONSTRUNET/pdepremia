@@ -204,7 +204,8 @@ export default function Rewards() {
       case 'balance': return 'Saldo (R$)'
       case 'xp_multiplier': return 'XP Duplo/Multiplicador'
       case 'cashback': return 'Cashback (%)'
-      case 'roulette': return 'Giro na Roleta'
+      case 'roulette': return 'Giro em Roleta Criada'
+      case 'daily_spin': return 'Giro na Roleta Diária'
       case 'box': return 'Abertura de Box'
       default: return type
     }
@@ -289,7 +290,9 @@ export default function Rewards() {
                         ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(code.reward_amount)
                         : code.reward_type === 'cashback'
                           ? `${code.reward_amount}%`
-                          : `${code.reward_amount}x`
+                          : code.reward_type === 'daily_spin'
+                            ? `${code.reward_amount} giro(s)`
+                            : `${code.reward_amount}x`
                       }
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
@@ -400,13 +403,14 @@ export default function Rewards() {
                       <option value="balance">Saldo na Carteira</option>
                       <option value="xp_multiplier">Multiplicador de XP</option>
                       <option value="cashback">Cashback (%)</option>
-                      <option value="roulette">Giro na Roleta</option>
+                      <option value="roulette">Giro em Roleta Criada</option>
+                      <option value="daily_spin">Giro na Roleta Diária</option>
                       <option value="box">Box (Caixa)</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
-                      {formData.reward_type === 'box' || formData.reward_type === 'roulette' 
+                      {formData.reward_type === 'box' || formData.reward_type === 'roulette' || formData.reward_type === 'daily_spin'
                         ? 'Quantidade' 
                         : 'Valor/Multiplicador*'}
                     </label>
