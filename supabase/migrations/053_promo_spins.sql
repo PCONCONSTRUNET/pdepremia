@@ -99,7 +99,7 @@ DECLARE
   v_user_id uuid;
   v_deposit_count integer;
   v_profile record;
-  v_config record;
+  v_config jsonb;
   v_prizes jsonb;
   v_prize_count integer;
   v_random_index integer;
