@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { Link, Navigate } from 'react-router-dom'
 import { 
@@ -43,6 +43,26 @@ export default function PartnerPanel() {
 
   const { data: stats, isLoading: isStatsLoading } = usePartnerStats()
   const { data: referrals, isLoading: isReferralsLoading } = usePartnerReferrals()
+  const queryClient = useQueryClient()
+
+  useEffect(() => {
+    if (!profile?.is_affiliate) return
+
+    const sub = supabase
+      .channel('partner_payments_changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'payments' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['partner'] })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(sub)
+    }
+  }, [profile?.is_affiliate, queryClient])
 
   if (isAuthLoading) return <LoadingPage />
 

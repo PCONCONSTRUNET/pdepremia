@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Users, UserPlus, Link as LinkIcon, DollarSign, Copy, Check, Search, BarChart3, PieChart as PieChartIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -12,7 +12,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
 } from 'recharts'
-import { maskCPF } from '@/lib/utils'
+import { maskCPF, formatDateTime } from '@/lib/utils'
 
 function useAffiliates() {
   return useQuery({
@@ -30,6 +30,23 @@ const COLORS = ['#10b981', '#ef4444', '#f59e0b', '#3b82f6', '#8b5cf6']
 export default function AdminAffiliates() {
   const queryClient = useQueryClient()
   const { data: affiliates, isLoading } = useAffiliates()
+
+  useEffect(() => {
+    const sub = supabase
+      .channel('admin_payments_changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'payments' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['admin', 'affiliates'] })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(sub)
+    }
+  }, [queryClient])
   
   const [searchTerm, setSearchTerm] = useState('')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
@@ -40,6 +57,7 @@ export default function AdminAffiliates() {
   const [cpaValue, setCpaValue] = useState(0)
   const [revsharePercentage, setRevsharePercentage] = useState(0)
   const [editingUserId, setEditingUserId] = useState<string | null>(null)
+  const [viewReferralsAffiliate, setViewReferralsAffiliate] = useState<any>(null)
 
   const handleCopyLink = (code: string) => {
     const link = `${window.location.origin}/${code}`
@@ -348,6 +366,15 @@ export default function AdminAffiliates() {
                         >
                           Editar
                         </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="flex-1 md:flex-none"
+                          onClick={() => setViewReferralsAffiliate(affiliate)}
+                        >
+                          <Users size={14} className="mr-2 hidden md:block" />
+                          Indicações
+                        </Button>
                         <Button 
                           variant="outline" 
                           size="sm" 
@@ -443,6 +470,100 @@ export default function AdminAffiliates() {
           </div>
         </form>
       </Modal>
+
+      {viewReferralsAffiliate && (
+        <AffiliateReferralsModal
+          isOpen={!!viewReferralsAffiliate}
+          onClose={() => setViewReferralsAffiliate(null)}
+          affiliateId={viewReferralsAffiliate.affiliate_id}
+          affiliateName={viewReferralsAffiliate.full_name}
+        />
+      )}
     </div>
   )
 }
+
+function AffiliateReferralsModal({ 
+  isOpen, 
+  onClose, 
+  affiliateId, 
+  affiliateName 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  affiliateId: string; 
+  affiliateName: string;
+}) {
+  const queryClient = useQueryClient()
+  const { data: referrals, isLoading } = useQuery({
+    queryKey: ['admin', 'affiliate-referrals', affiliateId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_affiliate_referrals', { p_affiliate_id: affiliateId })
+      if (error) throw error
+      return data || []
+    },
+    enabled: !!affiliateId && isOpen
+  })
+
+  useEffect(() => {
+    if (!isOpen) return
+    const sub = supabase
+      .channel('admin_affiliate_referrals_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['admin', 'affiliate-referrals', affiliateId] })
+      })
+      .subscribe()
+    return () => {
+      supabase.removeChannel(sub)
+    }
+  }, [isOpen, affiliateId, queryClient])
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={`Indicações de ${affiliateName}`}>
+      <div className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-16 bg-surface-800 animate-pulse rounded-lg" />
+            ))}
+          </div>
+        ) : !referrals || referrals.length === 0 ? (
+          <EmptyState
+            icon={Users}
+            title="Nenhuma indicação"
+            description="Este parceiro ainda não possui indicados."
+          />
+        ) : (
+          <div className="space-y-3">
+            {referrals.map((ref: any) => (
+              <div key={ref.user_id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-surface-800 rounded-lg border border-surface-700">
+                <div>
+                  <p className="text-white font-bold text-sm">{ref.full_name}</p>
+                  <p className="text-slate-400 text-xs">{ref.email}</p>
+                  <p className="text-slate-500 text-[10px] mt-1">{formatDateTime(ref.created_at)}</p>
+                </div>
+                <div className="mt-2 sm:mt-0 text-right">
+                  {ref.has_deposited ? (
+                    <div>
+                      <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-bold flex items-center gap-1 justify-end w-max ml-auto">
+                        <Check size={12} /> Depositou
+                      </span>
+                      <p className="text-brand-400 text-xs font-bold mt-1">
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(ref.total_deposited))}
+                      </p>
+                    </div>
+                  ) : (
+                    <span className="px-2 py-1 bg-surface-700 text-slate-400 rounded-full text-xs font-medium inline-block">
+                      Sem Depósito
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </Modal>
+  )
+}
+

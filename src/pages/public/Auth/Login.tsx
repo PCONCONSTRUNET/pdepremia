@@ -264,7 +264,8 @@ export default function Login() {
           </AnimatePresence>
         </div>
 
-        {/* Toggle Mode */}
+        {/* Toggle Mode (Oculto) */}
+        {/*
         <div className="mt-6 text-center">
           <button
             onClick={() => setIsAdminMode(!isAdminMode)}
@@ -274,6 +275,7 @@ export default function Login() {
             {isAdminMode ? 'Voltar para login de cliente' : 'Acesso para Organizadores'}
           </button>
         </div>
+        */}
 
         {/* Trust signal */}
         <p className="text-center text-slate-600 text-xs mt-6">
