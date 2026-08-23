@@ -72,7 +72,7 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
   }
 
   const handleDeposit = async () => {
-    if (numericAmount < 1) return // Min deposit R$ 1,00
+    if (numericAmount < 10) return // Min deposit R$ 10,00
     if (!user) {
       toast.error('Você precisa estar logado.')
       return
@@ -254,6 +254,9 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
                       className="w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white text-lg font-bold focus:outline-none focus:border-brand-500 focus:bg-white/10 transition-all shadow-inner"
                     />
                   </div>
+                  {numericAmount > 0 && numericAmount < 10 && (
+                    <p className="text-red-400 text-xs mt-2 text-center">O valor mínimo de depósito é R$ 10,00.</p>
+                  )}
                 </div>
 
                 {/* Action */}
@@ -263,7 +266,7 @@ export function DepositModal({ isOpen, onClose }: DepositModalProps) {
                     className="w-full sm:w-3/4 py-3 text-base font-semibold rounded-full shadow-[0_0_20px_rgba(251,191,36,0.2)] hover:shadow-[0_0_25px_rgba(251,191,36,0.4)] transition-shadow"
                     onClick={handleDeposit}
                     isLoading={isLoading}
-                    disabled={numericAmount < 1}
+                    disabled={numericAmount < 10}
                   >
                     Gerar PIX
                   </Button>

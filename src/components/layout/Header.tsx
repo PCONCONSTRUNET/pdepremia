@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, Ticket, Trophy, Star, LogOut, User, LayoutDashboard, ChevronDown, Wallet, Plus, Gift, Shield } from 'lucide-react'
+import { Menu, X, Ticket, Trophy, Star, LogOut, User, LayoutDashboard, ChevronDown, Wallet, Plus, Gift, Shield, Handshake } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useUIStore } from '@/store/uiStore'
 import { getInitials, formatCurrency } from '@/lib/utils'
@@ -237,6 +237,17 @@ export function Header() {
                               <Wallet size={15} />
                               Saque
                             </Link>
+
+                            {(profile as any)?.is_affiliate && (
+                              <Link
+                                to="/painel-parceiro"
+                                onClick={() => setIsProfileOpen(false)}
+                                className="flex items-center gap-2.5 px-3 py-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg text-sm transition-colors"
+                              >
+                                <Handshake size={15} />
+                                Área do Parceiro
+                              </Link>
+                            )}
 
                             <button
                               onClick={handleSignOut}

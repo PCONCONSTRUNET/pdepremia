@@ -2,14 +2,14 @@ import { NavLink } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { 
   Gift, TrendingUp, Target, History, Flame, 
-  Star, Gamepad2, PackageOpen, RotateCw, Ticket, Trophy, Bomb
+  Star, Gamepad2, PackageOpen, RotateCw, Ticket, Trophy, Bomb, Handshake
 } from 'lucide-react'
 import { useUIStore } from '@/store/uiStore'
 import { useAuth } from '@/hooks/useAuth'
 
 export function Sidebar() {
   const { isSidebarOpen } = useUIStore()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, profile } = useAuth()
 
   const navItems = [
     {
@@ -37,6 +37,7 @@ export function Sidebar() {
         { icon: Trophy, label: 'Meus Prêmios', to: '/meus-premios', reqAuth: true },
         { icon: Gift, label: 'Recompensas', to: '/recompensas', reqAuth: true },
         { icon: TrendingUp, label: 'Progresso', to: '/ranks', reqAuth: true },
+        ...((profile as any)?.is_affiliate ? [{ icon: Handshake, label: 'Área do Parceiro', to: '/painel-parceiro', reqAuth: true }] : []),
       ]
     }
   ]

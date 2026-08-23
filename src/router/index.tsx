@@ -26,6 +26,7 @@ const Double = lazy(() => import('@/pages/public/Double'))
 const Mines = lazy(() => import('@/pages/public/Mines'))
 const Sorteios = lazy(() => import('@/pages/public/Sorteios/index'))
 const Favoritos = lazy(() => import('@/pages/public/Favoritos'))
+const PartnerPanel = lazy(() => import('@/pages/public/PartnerPanel'))
 
 // ─── Auth Pages ───────────────────────────────────────────────────────────────
 const Login = lazy(() => import('@/pages/public/Auth/Login'))
@@ -53,6 +54,7 @@ const AdminDailyWheel = lazy(() => import('@/pages/admin/DailyWheelAdmin'))
 const AdminSorteios = lazy(() => import('@/pages/admin/Sorteios/index'))
 const AdminSorteioForm = lazy(() => import('@/pages/admin/Sorteios/Form'))
 const AdminSupport = lazy(() => import('@/pages/admin/Support'))
+const AdminAffiliates = lazy(() => import('@/pages/admin/Affiliates'))
 
 function Fallback() {
   return <LoadingPage />
@@ -77,6 +79,9 @@ const router = createBrowserRouter([
       { path: '/mines', element: <Suspense fallback={<Fallback />}><Mines /></Suspense> },
       { path: '/sorteios', element: <Suspense fallback={<Fallback />}><Sorteios /></Suspense> },
 
+      // Rota de afiliado dinâmica (ex: /lucas)
+      { path: '/:refCode', element: <Suspense fallback={<Fallback />}><Home /></Suspense> },
+
       // Auth routes (guests only)
       {
         element: <GuestRoute />,
@@ -99,6 +104,7 @@ const router = createBrowserRouter([
           { path: '/meus-bilhetes', element: <Suspense fallback={<Fallback />}><MyTickets /></Suspense> },
           { path: '/meus-premios', element: <Suspense fallback={<Fallback />}><MyPrizes /></Suspense> },
           { path: '/recompensas', element: <Suspense fallback={<Fallback />}><Rewards /></Suspense> },
+          { path: '/painel-parceiro', element: <Suspense fallback={<Fallback />}><PartnerPanel /></Suspense> },
         ],
       },
     ],
@@ -129,6 +135,7 @@ const router = createBrowserRouter([
           { path: '/admin/sorteios/novo', element: <Suspense fallback={<Fallback />}><AdminSorteioForm /></Suspense> },
           { path: '/admin/sorteios/:id', element: <Suspense fallback={<Fallback />}><AdminSorteioForm /></Suspense> },
           { path: '/admin/suporte', element: <Suspense fallback={<Fallback />}><AdminSupport /></Suspense> },
+          { path: '/admin/parceiros', element: <Suspense fallback={<Fallback />}><AdminAffiliates /></Suspense> },
         ],
       },
     ],

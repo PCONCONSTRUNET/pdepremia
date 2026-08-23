@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button'
 import { LoadingPage } from '@/components/common/Loading'
 import { ConfirmModal } from '@/components/ui/Modal'
 
-type PrizeType = 'balance' | 'empty' | 'physical'
+type PrizeType = 'balance' | 'empty' | 'physical' | 'free_spins'
 
 export interface DailyWheelPrize {
   id: string
@@ -20,6 +20,8 @@ export interface DailyWheelPrize {
   probability: number
   color: string
   imageUrl?: string
+  freeSpinsAmount?: number
+  freeSpinsValue?: number
 }
 
 export type DailyWheelConfig = {
@@ -54,6 +56,29 @@ export default function DailyWheelAdmin() {
   const [formProb, setFormProb] = useState(10)
   const [formColor, setFormColor] = useState('#10B981')
   const [formImageUrl, setFormImageUrl] = useState('')
+  const [formFreeSpinsAmount, setFormFreeSpinsAmount] = useState(0)
+  const [formFreeSpinsValue, setFormFreeSpinsValue] = useState(0.20)
+
+  // Auto-fill image URL based on selected options
+  useEffect(() => {
+    // Only auto-fill if we are creating a new prize or if the user hasn't typed a custom one that doesn't match our patterns
+    let newImageUrl = ''
+    if (formType === 'empty') {
+      newImageUrl = '/tente_novamente.png'
+    } else if (formType === 'free_spins' && formFreeSpinsAmount > 0) {
+      newImageUrl = `/${formFreeSpinsAmount} rodadas gratis.png`
+    } else if (formType === 'balance' && formValue > 0) {
+      if (formValue === 1 || formValue === 2) {
+        newImageUrl = `/${formValue} real.png`
+      } else {
+        newImageUrl = `/${formValue} reais.png`
+      }
+    }
+    
+    if (newImageUrl) {
+      setFormImageUrl(newImageUrl)
+    }
+  }, [formType, formValue, formFreeSpinsAmount])
 
   const { data: configRecord, isLoading } = useQuery({
     queryKey: ['admin', 'system_settings', 'daily_wheel_prizes'],
@@ -122,7 +147,9 @@ export default function DailyWheelAdmin() {
       value: formType === 'balance' ? Number(formValue) : 0,
       probability: Number(formProb),
       color: formColor,
-      imageUrl: formImageUrl || undefined
+      imageUrl: formImageUrl || undefined,
+      freeSpinsAmount: formType === 'free_spins' ? Number(formFreeSpinsAmount) : undefined,
+      freeSpinsValue: formType === 'free_spins' ? Number(formFreeSpinsValue) : undefined
     }
 
     const updatedConfig = { ...localConfig }
@@ -157,6 +184,8 @@ export default function DailyWheelAdmin() {
     setFormProb(prize.probability)
     setFormColor(prize.color)
     setFormImageUrl(prize.imageUrl || '')
+    setFormFreeSpinsAmount(prize.freeSpinsAmount || 0)
+    setFormFreeSpinsValue(prize.freeSpinsValue || 0.20)
     setEditingPrizeId(prize.id)
     setShowAddForm(true)
   }
@@ -169,6 +198,8 @@ export default function DailyWheelAdmin() {
     setFormProb(10)
     setFormColor('#10B981')
     setFormImageUrl('')
+    setFormFreeSpinsAmount(0)
+    setFormFreeSpinsValue(0.20)
     setEditingPrizeId(null)
   }
 
@@ -272,6 +303,7 @@ export default function DailyWheelAdmin() {
                   <option value="balance">Adicionar dinheiro ao Saldo</option>
                   <option value="physical">Apenas dar Parabéns (Não mexe no saldo)</option>
                   <option value="empty">Dizer "Tente Novamente" (Vazio)</option>
+                  <option value="free_spins">Dar Rodadas Grátis no Cassino</option>
                 </select>
               </div>
               <div>
@@ -320,6 +352,34 @@ export default function DailyWheelAdmin() {
                   </div>
                 </div>
               )}
+              {formType === 'free_spins' && (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-400 mb-1">Quantidade de Rodadas</label>
+                    <input 
+                      type="number" 
+                      min="1"
+                      value={formFreeSpinsAmount} 
+                      onChange={e => setFormFreeSpinsAmount(Number(e.target.value))}
+                      className="w-full bg-surface-900 border border-surface-700 rounded-lg px-3 py-2 text-white focus:border-brand-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-400 mb-1">Valor de Cada Rodada</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">R$</span>
+                      <input 
+                        type="number" 
+                        min="0"
+                        step="0.01"
+                        value={formFreeSpinsValue} 
+                        onChange={e => setFormFreeSpinsValue(Number(e.target.value))}
+                        className="w-full bg-surface-900 border border-surface-700 rounded-lg pl-9 pr-3 py-2 text-white focus:border-brand-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-medium text-slate-400 mb-1">Nome do Arquivo de Imagem (Opcional)</label>
                   <input 
@@ -362,6 +422,7 @@ export default function DailyWheelAdmin() {
                     <p className="text-xs text-slate-400 flex items-center gap-2">
                       <span className="capitalize px-2 py-0.5 bg-surface-700 rounded-md text-[10px]">{prize.category || 'Geral'}</span>
                       {prize.type === 'balance' && <span>• R$ {prize.value.toFixed(2)}</span>}
+                      {prize.type === 'free_spins' && <span>• {prize.freeSpinsAmount} Rodadas (R$ {prize.freeSpinsValue?.toFixed(2)})</span>}
                       <span>• Chance: {prize.probability}%</span>
                     </p>
                   </div>

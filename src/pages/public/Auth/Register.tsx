@@ -54,6 +54,7 @@ export default function Register() {
           full_name: data.full_name,
           phone: cleanPhone,
           cpf: cleanCpf,
+          birth_date: data.birth_date,
         },
         captchaToken: captchaToken || undefined,
       },
@@ -61,11 +62,25 @@ export default function Register() {
 
     if (authData?.user) {
       // Force update the profile since the trigger might not map these fields
-      await supabase.from('profiles').update({ 
+      const { error: updateError } = await supabase.from('profiles').update({ 
         cpf: cleanCpf, 
         phone: cleanPhone,
         birth_date: data.birth_date
       }).eq('id', authData.user.id)
+
+      if (updateError) {
+        console.error('Failed to update profile fields:', updateError)
+      }
+
+      // Set affiliate code if present
+      const refCode = sessionStorage.getItem('@premiaja:ref')
+      if (refCode) {
+        await supabase.rpc('set_affiliate_by_code', {
+          p_user_id: authData.user.id,
+          p_affiliate_code: refCode
+        })
+        // Optional: remove ref after use, but let's keep it in case they close tab before finishing
+      }
     }
 
     if (error) {

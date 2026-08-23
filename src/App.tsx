@@ -24,6 +24,15 @@ function AppContent() {
   
   const { user, setProfile, reset } = useAuthStore()
 
+  // Capture global referral code
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const ref = params.get('ref')
+    if (ref) {
+      sessionStorage.setItem('@premiaja:ref', ref)
+    }
+  }, [])
+
   // Initialize global realtime listener for profile updates
   useEffect(() => {
     if (!user?.id) return

@@ -21,6 +21,7 @@ const navItems = [
   { to: '/admin/roleta-diaria', label: 'Roleta Diária', icon: <Disc3 size={18} /> },
   { to: '/admin/boxes', label: 'Boxes', icon: <Package size={18} /> },
   { to: '/admin/usuarios', label: 'Usuários', icon: <Users size={18} /> },
+  { to: '/admin/parceiros', label: 'Parceiros', icon: <Star size={18} /> },
   { to: '/admin/suporte', label: 'Suporte', icon: <MessageSquare size={18} /> },
   { to: '/admin/auditoria', label: 'Auditoria', icon: <Shield size={18} /> },
   { to: '/admin/gateways', label: 'Gateways', icon: <CreditCard size={18} /> },

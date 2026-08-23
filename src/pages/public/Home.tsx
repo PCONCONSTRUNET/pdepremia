@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { CardSkeleton } from '@/components/common/Loading'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import type { Winner } from '@/types'
 import { minigames } from '@/config/games'
@@ -849,6 +849,14 @@ function CTASection() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Home() {
+  const { refCode } = useParams<{ refCode?: string }>()
+
+  useEffect(() => {
+    if (refCode) {
+      sessionStorage.setItem('@premiaja:ref', refCode)
+    }
+  }, [refCode])
+
   return (
     <>
       <HeroSection />
