@@ -55,6 +55,7 @@ const AdminSorteios = lazy(() => import('@/pages/admin/Sorteios/index'))
 const AdminSorteioForm = lazy(() => import('@/pages/admin/Sorteios/Form'))
 const AdminSupport = lazy(() => import('@/pages/admin/Support'))
 const AdminAffiliates = lazy(() => import('@/pages/admin/Affiliates'))
+const AdminTreasury = lazy(() => import('@/pages/admin/Treasury'))
 
 function Fallback() {
   return <LoadingPage />
@@ -136,6 +137,7 @@ const router = createBrowserRouter([
           { path: '/admin/sorteios/:id', element: <Suspense fallback={<Fallback />}><AdminSorteioForm /></Suspense> },
           { path: '/admin/suporte', element: <Suspense fallback={<Fallback />}><AdminSupport /></Suspense> },
           { path: '/admin/parceiros', element: <Suspense fallback={<Fallback />}><AdminAffiliates /></Suspense> },
+          { path: '/admin/tesouraria', element: <Suspense fallback={<Fallback />}><AdminTreasury /></Suspense> },
         ],
       },
     ],

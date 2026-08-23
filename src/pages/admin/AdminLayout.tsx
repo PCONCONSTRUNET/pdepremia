@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Megaphone, ShoppingCart, CreditCard, Ticket, Trophy,
   Package, Disc3, Users, ClipboardList, Settings, LogOut, Menu, X,
-  Star, ChevronRight, Gift, Shield, Wallet, MessageSquare
+  Star, ChevronRight, Gift, Shield, Wallet, MessageSquare, Landmark
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { getInitials } from '@/lib/utils'
@@ -12,6 +12,7 @@ import toast from 'react-hot-toast'
 
 const navItems = [
   { to: '/admin', label: 'Dashboard', icon: <LayoutDashboard size={18} />, end: true },
+  { to: '/admin/tesouraria', label: 'Caixa', icon: <Landmark size={18} /> },
   { to: '/admin/saques', label: 'Saques', icon: <Wallet size={18} /> },
   { to: '/admin/pagamentos', label: 'Pagamentos', icon: <CreditCard size={18} /> },
   { to: '/admin/sorteios', label: 'Sorteios', icon: <Megaphone size={18} /> },
