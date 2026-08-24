@@ -592,17 +592,25 @@ export default function Double() {
                 <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-white z-20 -translate-x-1/2 shadow-[0_0_15px_rgba(255,255,255,1)]"></div>
                 
                 {/* Roleta Animada */}
-                <div className={`flex gap-2 sm:gap-4 absolute left-1/2 ${status !== 'idle' ? 'transition-transform' : 'transition-transform'}`} 
+                <div className={`flex absolute left-1/2 transition-transform [--item-size:96px] [--item-gap:16px] max-sm:[--item-size:64px] max-sm:[--item-gap:8px]`} 
                      style={{ 
-                       transform: `translateX(-${currentIndex * (window.innerWidth < 640 ? 4.5 : 7) + (window.innerWidth < 640 ? 2 : 3)}rem)`,
+                       gap: 'var(--item-gap)',
+                       transform: `translateX(calc(-1 * (${currentIndex} * (var(--item-size) + var(--item-gap)) + (var(--item-size) / 2))))`,
                        transitionDuration: status !== 'idle' ? `${spinDuration}ms` : '1000ms',
                        transitionTimingFunction: status !== 'idle' ? 'cubic-bezier(0.2, 0.6, 0.3, 1)' : 'cubic-bezier(0.4, 0, 0.2, 1)'
                      }}>
-                  {rouletteItems.map((item, i) => {
-                    const isWhite = item.color === 'white'
+                  {rouletteItems.map((item, idx) => {
                     const isRed = item.color === 'red'
+                    const isWhite = item.color === 'white'
+                    
                     return (
-                      <div key={i} className={`shrink-0 w-16 h-16 sm:w-24 sm:h-24 rounded-xl flex items-center justify-center overflow-hidden ${isWhite ? 'bg-white border-b-4 border-black/10' : (isRed ? 'bg-[#F12C4C] border-b-4 border-black/20 shadow-[inset_0_0_15px_rgba(0,0,0,0.1)]' : 'bg-[#2B3139] border-b-4 border-black/20 shadow-[inset_0_0_15px_rgba(0,0,0,0.3)]')}`}>
+                      <div key={idx} 
+                           className={`shrink-0 rounded-xl flex items-center justify-center overflow-hidden relative
+                             ${isWhite ? 'bg-white border-b-4 border-black/10' : 
+                               (isRed ? 'bg-[#F12C4C] border-b-4 border-black/20 shadow-[inset_0_0_15px_rgba(0,0,0,0.1)]' : 
+                                        'bg-[#2B3139] border-b-4 border-black/20 shadow-[inset_0_0_15px_rgba(0,0,0,0.3)]')}
+                           `}
+                           style={{ width: 'var(--item-size)', height: 'var(--item-size)' }}>
                         {isWhite ? (
                           <img src="/icone%20pedra%20branca.png" alt="W" className="w-full h-full object-cover scale-[1.4] translate-y-1" />
                         ) : (
