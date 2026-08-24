@@ -82,20 +82,22 @@ export default function Double() {
   const [history, setHistory] = useState<{color: ColorType, number: number | string, timestamp: string, hash?: string, roundId?: number}[]>([])
 
   // Fetch history from DB
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const { data, error } = await (supabase as any).rpc('get_double_history', { p_limit: 15 })
-        if (error) throw error
-        if (data && Array.isArray(data)) {
-          setHistory(data)
-        }
-      } catch (err) {
-        console.error('Error fetching double history from DB:', err)
+  const fetchHistory = async () => {
+    try {
+      const { data, error } = await (supabase as any).rpc('get_double_history', { p_limit: 15 })
+      if (error) throw error
+      if (data && Array.isArray(data)) {
+        setHistory(data)
       }
+    } catch (err) {
+      console.error('Error fetching double history from DB:', err)
     }
+  }
+
+  useEffect(() => {
     fetchHistory()
   }, [])
+
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<{color: ColorType, number: number | string, timestamp: string, hash?: string, roundId?: number} | null>(null)
   const [rouletteItems, setRouletteItems] = useState<{color: ColorType, number: string}[]>([])
   const [currentIndex, setCurrentIndex] = useState(15) // Reset inicial
@@ -203,6 +205,8 @@ export default function Double() {
       // New Round Reset
       if (currentRoundId !== roundIdRef.current) {
         roundIdRef.current = currentRoundId
+        // Fetch real history from DB to perfectly heal any client desync from sleep/delays
+        fetchHistory()
       }
 
       if (phaseTime < BET_OPEN_SECS) {
@@ -400,14 +404,19 @@ export default function Double() {
     setCurrentIndex(targetIndex)
 
     setTimeout(() => {
-      // Verifica se a rodada já virou (para não ressuscitar estado velho)
+      // Verifica se a rodada já virou
       const checkNow = (Date.now() + timeOffset) / 1000
       const checkCurrentRound = Math.floor(checkNow / ROUND_DURATION)
-      if (checkCurrentRound !== targetRoundId) return
+      
+      // Se a aba dormiu e acordou muito depois, ignoramos o push manual
+      // pois o fetchHistory() que roda a cada rodada já vai corrigir a interface silenciosamente.
+      if (checkCurrentRound > targetRoundId + 1) return
 
       setStatus('finished')
       setHistory(prev => {
-        const newHistory = [...prev, {color: resultColor, number: resultNumber === 0 ? 'W' : resultNumber, timestamp: getMockTimestamp(0), hash: serverHash}]
+        // Para evitar duplicatas caso o fetchHistory já tenha rodado, checamos se este roundId já está na lista
+        if (prev.some(h => h.roundId === targetRoundId)) return prev
+        const newHistory = [...prev, {color: resultColor, number: resultNumber === 0 ? 'W' : resultNumber, timestamp: getMockTimestamp(0), hash: serverHash, roundId: targetRoundId}]
         if (newHistory.length > 100) return newHistory.slice(newHistory.length - 100) // Keep max 100 for modal
         return newHistory
       })
