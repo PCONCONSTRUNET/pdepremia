@@ -427,51 +427,51 @@ export default function Double() {
         <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6">
           
           {/* PAINEL DE APOSTAS (Esquerda no Desktop, Embaixo no Mobile) */}
-          <div className="order-2 lg:order-1 lg:col-span-3 bg-[#1A1F24] border border-surface-800 rounded-2xl p-5 flex flex-col shadow-xl">
+          <div className="order-2 lg:order-1 lg:col-span-3 bg-[#1A1F24] border border-surface-800 rounded-2xl p-3 sm:p-5 flex flex-col shadow-xl">
             
             {/* Abas */}
-            <div className="flex bg-[#0F1317] p-1 rounded-xl mb-6 border border-surface-800">
-              <button className="flex-1 py-2 text-sm font-medium text-white bg-[#2B3139] rounded-lg shadow-sm border border-surface-700">
+            <div className="flex bg-[#0F1317] p-1 rounded-xl mb-4 sm:mb-6 border border-surface-800">
+              <button className="flex-1 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white bg-[#2B3139] rounded-lg shadow-sm border border-surface-700">
                 Normal
               </button>
-              <button className="flex-1 py-2 text-sm font-medium text-slate-400 hover:text-white transition-colors">
+              <button className="flex-1 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-slate-400 hover:text-white transition-colors">
                 Auto
               </button>
             </div>
 
             {/* Input Quantia */}
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-2 px-1">
-                <label className="block text-slate-400 text-sm font-medium">Quantia</label>
+            <div className="mb-4 sm:mb-6">
+              <div className="flex justify-between items-center mb-1.5 sm:mb-2 px-1">
+                <label className="block text-slate-400 text-xs sm:text-sm font-medium">Quantia</label>
                 {Number((profile as any)?.double_free_spins_count || 0) > 0 && (
                   <button 
                     onClick={() => setUseFreeSpin(!useFreeSpin)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 ${useFreeSpin ? 'bg-gradient-to-r from-brand-600 to-brand-500 border border-brand-400 shadow-[0_0_15px_rgba(99,102,241,0.3)] transform scale-[1.02]' : 'bg-surface-800 border border-surface-600 hover:bg-surface-700 hover:border-surface-500'}`}
+                    className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full transition-all duration-300 ${useFreeSpin ? 'bg-gradient-to-r from-brand-600 to-brand-500 border border-brand-400 shadow-[0_0_15px_rgba(99,102,241,0.3)] transform scale-[1.02]' : 'bg-surface-800 border border-surface-600 hover:bg-surface-700 hover:border-surface-500'}`}
                   >
-                    <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center border-2 ${useFreeSpin ? 'bg-white border-white shadow-sm' : 'border-slate-500 bg-transparent'}`}>
+                    <div className={`w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 rounded-full flex items-center justify-center border-2 ${useFreeSpin ? 'bg-white border-white shadow-sm' : 'border-slate-500 bg-transparent'}`}>
                       {useFreeSpin && <div className="w-1.5 h-1.5 bg-brand-600 rounded-full"></div>}
                     </div>
-                    <span className={`text-xs font-bold tracking-wide ${useFreeSpin ? 'text-white drop-shadow-md' : 'text-slate-300'}`}>
+                    <span className={`text-[10px] sm:text-xs font-bold tracking-wide ${useFreeSpin ? 'text-white drop-shadow-md' : 'text-slate-300'}`}>
                       Giro Grátis ({(profile as any).double_free_spins_count}x R$ {Number((profile as any).double_free_spins_value || 0).toFixed(2)})
                     </span>
                   </button>
                 )}
               </div>
               <div className="relative flex items-center">
-                <span className="absolute left-4 text-white font-medium">R$</span>
+                <span className="absolute left-3 sm:left-4 text-white font-medium text-sm sm:text-base">R$</span>
                 <input
                   type="text"
                   value={betAmount}
                   onChange={handleAmountChange}
                   disabled={useFreeSpin}
                   placeholder="0.00"
-                  className={`w-full bg-[#0F1317] border border-surface-800 rounded-xl py-4 pl-[45px] pr-24 text-white font-medium text-left transition-colors focus:outline-none focus:border-brand-500 ${useFreeSpin ? 'opacity-70 cursor-not-allowed' : ''}`}
+                  className={`w-full bg-[#0F1317] border border-surface-800 rounded-xl py-2.5 sm:py-4 pl-10 sm:pl-[45px] pr-20 sm:pr-24 text-white font-medium text-sm sm:text-base text-left transition-colors focus:outline-none focus:border-brand-500 ${useFreeSpin ? 'opacity-70 cursor-not-allowed' : ''}`}
                 />
-                <div className="absolute right-2 flex items-center gap-1">
-                  <button onClick={handleHalf} disabled={useFreeSpin} className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors border ${useFreeSpin ? 'bg-surface-800 text-slate-500 border-surface-700 cursor-not-allowed' : 'bg-[#2B3139] hover:bg-surface-600 text-white border-surface-700'}`}>
+                <div className="absolute right-1.5 sm:right-2 flex items-center gap-1">
+                  <button onClick={handleHalf} disabled={useFreeSpin} className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-medium transition-colors border ${useFreeSpin ? 'bg-surface-800 text-slate-500 border-surface-700 cursor-not-allowed' : 'bg-[#2B3139] hover:bg-surface-600 text-white border-surface-700'}`}>
                     ½
                   </button>
-                  <button onClick={handleDouble} disabled={useFreeSpin} className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors border ${useFreeSpin ? 'bg-surface-800 text-slate-500 border-surface-700 cursor-not-allowed' : 'bg-[#2B3139] hover:bg-surface-600 text-white border-surface-700'}`}>
+                  <button onClick={handleDouble} disabled={useFreeSpin} className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-medium transition-colors border ${useFreeSpin ? 'bg-surface-800 text-slate-500 border-surface-700 cursor-not-allowed' : 'bg-[#2B3139] hover:bg-surface-600 text-white border-surface-700'}`}>
                     2x
                   </button>
                 </div>
@@ -479,32 +479,32 @@ export default function Double() {
             </div>
 
             {/* Selecionar Cor */}
-            <div className="mb-6">
-              <p className="text-slate-400 text-sm font-medium mb-3">Selecionar Cor</p>
+            <div className="mb-4 sm:mb-6">
+              <p className="text-slate-400 text-xs sm:text-sm font-medium mb-2 sm:mb-3">Selecionar Cor</p>
               <div className="grid grid-cols-3 gap-2">
                 <button 
                   onClick={() => setSelectedColor('red')}
-                  className={`py-4 rounded-xl font-bold flex flex-col items-center justify-center transition-all relative overflow-hidden ${
+                  className={`py-2.5 sm:py-4 rounded-xl font-bold flex flex-col items-center justify-center transition-all relative overflow-hidden ${
                     selectedColor === 'red' ? 'ring-2 ring-white shadow-[0_0_20px_rgba(241,44,76,0.3)]' : ''
                   } bg-[#F12C4C] hover:bg-[#F12C4C]/90 text-white`}
                 >
-                  <span className="text-sm">x2</span>
+                  <span className="text-xs sm:text-sm">x2</span>
                 </button>
                 <button 
                   onClick={() => setSelectedColor('white')}
-                  className={`py-4 rounded-xl font-bold flex flex-col items-center justify-center transition-all ${
+                  className={`py-2.5 sm:py-4 rounded-xl font-bold flex flex-col items-center justify-center transition-all ${
                     selectedColor === 'white' ? 'ring-2 ring-brand-500 shadow-[0_0_20px_rgba(255,255,255,0.2)]' : ''
                   } bg-white hover:bg-gray-100 text-[#1E2329]`}
                 >
-                  <span className="text-sm text-[#F12C4C]">x18</span>
+                  <span className="text-xs sm:text-sm text-[#F12C4C]">x18</span>
                 </button>
                 <button 
                   onClick={() => setSelectedColor('black')}
-                  className={`py-4 rounded-xl font-bold flex flex-col items-center justify-center transition-all ${
+                  className={`py-2.5 sm:py-4 rounded-xl font-bold flex flex-col items-center justify-center transition-all ${
                     selectedColor === 'black' ? 'ring-2 ring-white shadow-[0_0_20px_rgba(0,0,0,0.5)]' : ''
                   } bg-[#2B3139] hover:bg-[#2B3139]/80 text-white border border-surface-700`}
                 >
-                  <span className="text-sm">x2</span>
+                  <span className="text-xs sm:text-sm">x2</span>
                 </button>
               </div>
             </div>
@@ -513,7 +513,7 @@ export default function Double() {
             <button
               onClick={handlePlaceBet}
               disabled={status !== 'idle' || !selectedColor || activeBets.some(b => b.color === selectedColor)}
-              className={`w-full py-4 rounded-xl font-bold text-white transition-all mt-auto ${
+              className={`w-full py-3 sm:py-4 rounded-xl font-bold text-sm sm:text-base text-white transition-all mt-auto ${
                 status === 'idle' && (!selectedColor || !activeBets.some(b => b.color === selectedColor))
                   ? 'bg-[#F12C4C] hover:bg-[#d92241] shadow-lg shadow-[#F12C4C]/20' 
                   : 'bg-[#50242e] text-[#a45969] cursor-not-allowed'
