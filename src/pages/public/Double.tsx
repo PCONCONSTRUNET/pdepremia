@@ -139,14 +139,17 @@ export default function Double() {
     return parseFloat(val) || 0
   }
 
-  const handleHalf = () => {
+  const handleHalf = (e: React.MouseEvent) => {
+    e.preventDefault();
     const num = parseBetAmount(betAmount)
-    setBetAmount((num / 2).toString())
+    if (num > 0) setBetAmount((num / 2).toFixed(2))
   }
 
-  const handleDouble = () => {
+  const handleDouble = (e: React.MouseEvent) => {
+    e.preventDefault();
     const num = parseBetAmount(betAmount)
-    setBetAmount((num * 2).toString())
+    if (num > 0) setBetAmount((num * 2).toFixed(2))
+    else setBetAmount('1.00') // Se tiver vazio e apertar 2x, coloca 1.00 por padrão
   }
 
   // Server Time Sync & URL Params check
@@ -476,11 +479,11 @@ export default function Double() {
                   placeholder="0.00"
                   className={`w-full bg-[#0F1317] border border-surface-800 rounded-xl py-2.5 sm:py-4 pl-10 sm:pl-[45px] pr-20 sm:pr-24 text-white font-medium text-sm sm:text-base text-left transition-colors focus:outline-none focus:border-brand-500 ${useFreeSpin ? 'opacity-70 cursor-not-allowed' : ''}`}
                 />
-                <div className="absolute right-1.5 sm:right-2 flex items-center gap-1">
-                  <button onClick={handleHalf} disabled={useFreeSpin} className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-medium transition-colors border ${useFreeSpin ? 'bg-surface-800 text-slate-500 border-surface-700 cursor-not-allowed' : 'bg-[#2B3139] hover:bg-surface-600 text-white border-surface-700'}`}>
+                <div className="absolute right-1.5 sm:right-2 flex items-center gap-1 z-10">
+                  <button type="button" onClick={handleHalf} disabled={useFreeSpin} className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-medium transition-colors border ${useFreeSpin ? 'bg-surface-800 text-slate-500 border-surface-700 cursor-not-allowed' : 'bg-[#2B3139] hover:bg-surface-600 text-white border-surface-700'}`}>
                     ½
                   </button>
-                  <button onClick={handleDouble} disabled={useFreeSpin} className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-medium transition-colors border ${useFreeSpin ? 'bg-surface-800 text-slate-500 border-surface-700 cursor-not-allowed' : 'bg-[#2B3139] hover:bg-surface-600 text-white border-surface-700'}`}>
+                  <button type="button" onClick={handleDouble} disabled={useFreeSpin} className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-medium transition-colors border ${useFreeSpin ? 'bg-surface-800 text-slate-500 border-surface-700 cursor-not-allowed' : 'bg-[#2B3139] hover:bg-surface-600 text-white border-surface-700'}`}>
                     2x
                   </button>
                 </div>
