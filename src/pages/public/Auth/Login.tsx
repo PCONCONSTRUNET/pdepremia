@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Star, Mail, Lock, Eye, EyeOff, Phone, FileText, UserSquare } from 'lucide-react'
+import { Star, Mail, Lock, Eye, EyeOff, Phone, FileText, UserSquare, User } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/Button'
