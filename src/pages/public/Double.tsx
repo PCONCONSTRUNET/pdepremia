@@ -591,7 +591,7 @@ export default function Double() {
                 {/* Roleta Animada */}
                 <div className={`flex gap-2 sm:gap-4 absolute left-1/2 ${status !== 'idle' ? 'transition-transform' : 'transition-transform'}`} 
                      style={{ 
-                       transform: `translateX(-${currentIndex * (window.innerWidth < 640 ? 72 : 112) + (window.innerWidth < 640 ? 32 : 48)}px)`,
+                       transform: `translateX(-${currentIndex * (window.innerWidth < 640 ? 4.5 : 7) + (window.innerWidth < 640 ? 2 : 3)}rem)`,
                        transitionDuration: status !== 'idle' ? `${spinDuration}ms` : '1000ms',
                        transitionTimingFunction: status !== 'idle' ? 'cubic-bezier(0.2, 0.6, 0.3, 1)' : 'cubic-bezier(0.4, 0, 0.2, 1)'
                      }}>
