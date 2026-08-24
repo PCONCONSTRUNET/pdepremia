@@ -135,6 +135,7 @@ interface ConfirmModalProps {
   cancelLabel?: string
   variant?: 'danger' | 'primary'
   isLoading?: boolean
+  children?: ReactNode
 }
 
 export function ConfirmModal({
@@ -147,10 +148,12 @@ export function ConfirmModal({
   cancelLabel = 'Cancelar',
   variant = 'danger',
   isLoading,
+  children,
 }: ConfirmModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
       <p className="text-slate-400 text-sm mb-5">{description}</p>
+      {children && <div className="mb-5">{children}</div>}
       <div className="flex gap-3">
         <Button variant="secondary" className="flex-1" onClick={onClose}>
           {cancelLabel}
