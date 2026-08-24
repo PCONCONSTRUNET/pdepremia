@@ -6,7 +6,10 @@ import { LoadingPage } from '@/components/common/Loading'
 import { ErrorPage } from '@/pages/public/ErrorPage'
 
 // ─── Public Pages ─────────────────────────────────────────────────────────────
-const Home = lazy(() => import('@/pages/public/Home'))
+import Home from '@/pages/public/Home'
+import Boxes from '@/pages/public/Boxes'
+import Double from '@/pages/public/Double'
+import Profile from '@/pages/public/Profile'
 
 const Checkout = lazy(() => import('@/pages/public/Checkout'))
 const MyTickets = lazy(() => import('@/pages/public/MyTickets'))
@@ -16,20 +19,17 @@ const Ranks = lazy(() => import('@/pages/public/Ranks'))
 const Transparency = lazy(() => import('@/pages/public/Transparency'))
 const Terms = lazy(() => import('@/pages/public/Terms'))
 const Privacy = lazy(() => import('@/pages/public/Privacy'))
-const Profile = lazy(() => import('@/pages/public/Profile'))
 const Rewards = lazy(() => import('@/pages/public/Rewards'))
 const WheelTest = lazy(() => import('@/pages/public/WheelTest'))
 const DailyWheel = lazy(() => import('@/pages/public/DailyWheel'))
 const OpenBox = lazy(() => import('@/pages/public/OpenBox'))
-const Boxes = lazy(() => import('@/pages/public/Boxes'))
-const Double = lazy(() => import('@/pages/public/Double'))
 const Mines = lazy(() => import('@/pages/public/Mines'))
 const Sorteios = lazy(() => import('@/pages/public/Sorteios/index'))
 const Favoritos = lazy(() => import('@/pages/public/Favoritos'))
 const PartnerPanel = lazy(() => import('@/pages/public/PartnerPanel'))
 
 // ─── Auth Pages ───────────────────────────────────────────────────────────────
-const Login = lazy(() => import('@/pages/public/Auth/Login'))
+import Login from '@/pages/public/Auth/Login'
 const Register = lazy(() => import('@/pages/public/Auth/Register'))
 const ForgotPassword = lazy(() => import('@/pages/public/Auth/ForgotPassword'))
 
@@ -67,7 +67,7 @@ const router = createBrowserRouter([
     errorElement: <ErrorPage />,
     children: [
       // Public routes
-      { path: '/', element: <Suspense fallback={<Fallback />}><Home /></Suspense> },
+      { path: '/', element: <Home /> },
 
       { path: '/ganhadores', element: <Suspense fallback={<Fallback />}><Winners /></Suspense> },
       { path: '/ranks', element: <Suspense fallback={<Fallback />}><Ranks /></Suspense> },
@@ -75,19 +75,19 @@ const router = createBrowserRouter([
       { path: '/termos', element: <Suspense fallback={<Fallback />}><Terms /></Suspense> },
       { path: '/privacidade', element: <Suspense fallback={<Fallback />}><Privacy /></Suspense> },
 
-      { path: '/boxes', element: <Suspense fallback={<Fallback />}><Boxes /></Suspense> },
-      { path: '/double', element: <Suspense fallback={<Fallback />}><Double /></Suspense> },
+      { path: '/boxes', element: <Boxes /> },
+      { path: '/double', element: <Double /> },
       { path: '/mines', element: <Suspense fallback={<Fallback />}><Mines /></Suspense> },
       { path: '/sorteios', element: <Suspense fallback={<Fallback />}><Sorteios /></Suspense> },
 
       // Rota de afiliado dinâmica (ex: /lucas)
-      { path: '/:refCode', element: <Suspense fallback={<Fallback />}><Home /></Suspense> },
+      { path: '/:refCode', element: <Home /> },
 
       // Auth routes (guests only)
       {
         element: <GuestRoute />,
         children: [
-          { path: '/login', element: <Suspense fallback={<Fallback />}><Login /></Suspense> },
+          { path: '/login', element: <Login /> },
           { path: '/cadastro', element: <Suspense fallback={<Fallback />}><Register /></Suspense> },
           { path: '/esqueci-senha', element: <Suspense fallback={<Fallback />}><ForgotPassword /></Suspense> },
         ],
@@ -97,7 +97,7 @@ const router = createBrowserRouter([
       {
         element: <ProtectedRoute />,
         children: [
-          { path: '/perfil', element: <Suspense fallback={<Fallback />}><Profile /></Suspense> },
+          { path: '/perfil', element: <Profile /> },
           { path: '/favoritos', element: <Suspense fallback={<Fallback />}><Favoritos /></Suspense> },
           { path: '/roleta-diaria', element: <Suspense fallback={<Fallback />}><DailyWheel /></Suspense> },
           { path: '/checkout/:orderId', element: <Suspense fallback={<Fallback />}><Checkout /></Suspense> },
