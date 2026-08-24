@@ -79,13 +79,23 @@ export default function Double() {
     return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`
   }
 
-  const [history, setHistory] = useState<{color: ColorType, number: number | string, timestamp: string}[]>([
-    {color: 'red', number: 1, timestamp: getMockTimestamp(14)}, {color: 'black', number: 14, timestamp: getMockTimestamp(13)}, {color: 'white', number: 'W', timestamp: getMockTimestamp(12)}, 
-    {color: 'red', number: 3, timestamp: getMockTimestamp(11)}, {color: 'black', number: 12, timestamp: getMockTimestamp(10)}, {color: 'black', number: 11, timestamp: getMockTimestamp(9)}, 
-    {color: 'red', number: 5, timestamp: getMockTimestamp(8)}, {color: 'red', number: 7, timestamp: getMockTimestamp(7)}, {color: 'black', number: 8, timestamp: getMockTimestamp(6)}, 
-    {color: 'white', number: 'W', timestamp: getMockTimestamp(5)}, {color: 'black', number: 10, timestamp: getMockTimestamp(4)}, {color: 'red', number: 2, timestamp: getMockTimestamp(3)}, 
-    {color: 'black', number: 13, timestamp: getMockTimestamp(2)}, {color: 'black', number: 9, timestamp: getMockTimestamp(1)}
-  ])
+  const [history, setHistory] = useState<{color: ColorType, number: number | string, timestamp: string, hash?: string, roundId?: number}[]>([])
+
+  // Fetch history from DB
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const { data, error } = await (supabase as any).rpc('get_double_history', { p_limit: 15 })
+        if (error) throw error
+        if (data && Array.isArray(data)) {
+          setHistory(data)
+        }
+      } catch (err) {
+        console.error('Error fetching double history from DB:', err)
+      }
+    }
+    fetchHistory()
+  }, [])
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<{color: ColorType, number: number | string, timestamp: string, hash?: string, roundId?: number} | null>(null)
   const [rouletteItems, setRouletteItems] = useState<{color: ColorType, number: string}[]>([])
   const [currentIndex, setCurrentIndex] = useState(15) // Reset inicial
