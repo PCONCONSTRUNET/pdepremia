@@ -18,16 +18,21 @@ export function getPrizeImage(prize: any) {
   
   if (prize.prize_type === 'box' && prize.reference_value) {
     const val = Number(prize.reference_value);
-    if (val === 1) return '/1 real.png';
-    if (val === 2) return '/2 real.png';
-    if (val === 5) return '/5 reais.png';
-    if (val === 10) return '/10 reais.png';
-    if (val === 15) return '/15 reais.png';
-    if (val === 20) return '/20 reais.png';
-    if (val === 30) return '/30 reais.png';
-    if (val === 50) return '/50 reais.png';
-    if (val === 100) return '/100 reais.png';
-    if (val === 200) return '/200 reais.png';
+    // Removemos os mapeamentos fixos pra forçar o fallback de ícone nas modais, ou checamos os assets de forma padronizada:
+    if ([1, 2, 3, 5, 10, 15, 20, 30, 50, 100, 200].includes(val)) {
+      // Map to exact existing files we found in public dir:
+      if (val === 1) return '/1 real.png';
+      if (val === 2) return '/2 real.png';
+      if (val === 3) return '/3 reais.png';
+      if (val === 5) return '/5 reais.png';
+      if (val === 10) return '/10 reais.png';
+      if (val === 15) return '/15 reais.png';
+      if (val === 20) return '/20 reais.png';
+      if (val === 30) return '/30 reais.png';
+      if (val === 50) return '/50 reais.png';
+      if (val === 100) return '/100 reais.png';
+      if (val === 200) return '/200 reais.png';
+    }
   }
   
   if (prize.prize_type === 'double_spins') {

@@ -3,40 +3,10 @@ import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Gift, Sparkles, Coins } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { formatCurrency } from '@/lib/utils'
-
-function getPrizeImage(prize: any) {
-  if (prize.image_url) return prize.image_url;
-  
-  const name = prize.name.toLowerCase();
-  if (name.includes('tente novamente')) return '/tente_novamente.png';
-  
-  if (prize.prize_type === 'box' && prize.reference_value) {
-    const val = Number(prize.reference_value);
-    if (val === 1) return '/1 real.png';
-    if (val === 2) return '/2 real.png';
-    if (val === 5) return '/5 reais.png';
-    if (val === 10) return '/10 reais.png';
-    if (val === 15) return '/15 reais.png';
-    if (val === 20) return '/20 reais.png';
-    if (val === 30) return '/30 reais.png';
-    if (val === 50) return '/50 reais.png';
-    if (val === 100) return '/100 reais.png';
-    if (val === 200) return '/200 reais.png';
-  }
-  
-  if (prize.prize_type === 'double_spins') {
-    const nameStr = prize.name.toLowerCase();
-    if (nameStr.includes('2')) return '/2 rodadas gratis.png';
-    if (nameStr.includes('5')) return '/5 rodadas gratis.png';
-    if (nameStr.includes('10')) return '/10 rodadas gratis.png';
-    if (nameStr.includes('15')) return '/15 rodadas gratis.png';
-  }
-  
-  return null;
-}
+import { formatCurrency, getPrizeImage } from '@/lib/utils'
 
 function getRarity(dropChance: number) {
+
   if (dropChance <= 0.1) return { name: 'Mítico', color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/30', badge: 'bg-red-500/20 text-red-400 border-red-500/20' }
   if (dropChance <= 1) return { name: 'Lendário', color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/30', badge: 'bg-amber-500/20 text-amber-400 border-amber-500/20' }
   if (dropChance <= 5) return { name: 'Épico', color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/30', badge: 'bg-purple-500/20 text-purple-400 border-purple-500/20' }
@@ -133,7 +103,7 @@ export function BoxPrizesPreviewModal({ isOpen, onClose, box }: BoxPrizesPreview
                     Nenhum prêmio configurado para esta caixa ainda.
                   </div>
                 ) : (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
                     {prizes.map((prize: any) => {
                       const rarity = getRarity(Number(prize.drop_chance))
                       return (
@@ -158,19 +128,19 @@ export function BoxPrizesPreviewModal({ isOpen, onClose, box }: BoxPrizesPreview
                             )}
                           </AnimatePresence>
                           
-                          <div className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center mb-1 sm:mb-2 mt-2 sm:mt-3 relative z-10">
+                          <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center mb-1 sm:mb-2 mt-2 sm:mt-3 relative z-10">
                             {getPrizeImage(prize) ? (
                               <img 
-                                src={getPrizeImage(prize)} 
+                                src={getPrizeImage(prize)!} 
                                 alt={prize.name} 
                                 className="w-full h-full object-contain relative z-10 drop-shadow-lg hover:scale-110 transition-transform duration-300"
                               />
                             ) : (
-                              <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full ${rarity.bg} flex items-center justify-center ${rarity.color} border border-white/5`}>
+                              <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full ${rarity.bg} flex items-center justify-center ${rarity.color} border border-white/5`}>
                                 {prize.prize_type === 'box' && Number(prize.reference_value) > 0 ? (
-                                  <Coins size={20} className="sm:w-6 sm:h-6" />
+                                  <Coins size={24} className="sm:w-8 sm:h-8" />
                                 ) : (
-                                  <Gift size={20} className="sm:w-6 sm:h-6" />
+                                  <Gift size={24} className="sm:w-8 sm:h-8" />
                                 )}
                               </div>
                             )}

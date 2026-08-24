@@ -88,12 +88,12 @@ export function BoxPurchaseModal({ isOpen, onClose, box }: BoxPurchaseModalProps
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-md bg-surface-900 border border-surface-700 rounded-2xl shadow-2xl overflow-hidden"
+          className="relative w-full max-w-md bg-surface-900 border border-surface-700 rounded-2xl shadow-2xl overflow-hidden my-4 max-h-[90vh] flex flex-col"
         >
           {step === 'select' ? (
-            <>
+            <div className="flex flex-col h-full overflow-y-auto">
               {/* Header */}
-              <div className="px-6 py-4 border-b border-surface-700 flex items-center justify-between bg-surface-800">
+              <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-surface-700 flex items-center justify-between bg-surface-800 shrink-0">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
                   <ShoppingCart size={20} className="text-brand-400" />
                   Comprar Box
@@ -106,7 +106,7 @@ export function BoxPurchaseModal({ isOpen, onClose, box }: BoxPurchaseModalProps
                 </button>
               </div>
 
-              <div className="p-6 space-y-6">
+              <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                 {/* Box Info */}
                 <div className="flex items-center gap-4 p-4 rounded-xl bg-surface-800 border border-surface-700">
                   <div className="w-16 h-16 rounded-xl bg-surface-900 flex items-center justify-center overflow-hidden shrink-0">
@@ -128,31 +128,31 @@ export function BoxPurchaseModal({ isOpen, onClose, box }: BoxPurchaseModalProps
                     Quantidade
                   </label>
                   
-                  <div className="flex flex-col gap-4">
-                    <div className="flex items-center justify-between p-2 rounded-xl bg-surface-950 border border-surface-700">
+                  <div className="flex flex-col gap-3 sm:gap-4">
+                    <div className="flex items-center justify-between p-1.5 sm:p-2 rounded-xl bg-surface-950 border border-surface-700">
                       <button 
                         onClick={handleDecrement}
-                        className="w-12 h-12 flex items-center justify-center rounded-lg bg-surface-800 text-white hover:bg-surface-700 transition-colors"
+                        className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg bg-surface-800 text-white hover:bg-surface-700 transition-colors shrink-0"
                       >
                         <Minus size={20} />
                       </button>
-                      <span className="text-2xl font-bold text-white w-20 text-center">
+                      <span className="text-xl sm:text-2xl font-bold text-white w-16 sm:w-20 text-center">
                         {quantity}
                       </span>
                       <button 
                         onClick={handleIncrement}
-                        className="w-12 h-12 flex items-center justify-center rounded-lg bg-brand-500 text-white hover:bg-brand-600 transition-colors"
+                        className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg bg-brand-500 text-white hover:bg-brand-600 transition-colors shrink-0"
                       >
                         <Plus size={20} />
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
                       {[5, 10, 20, 50].map(qty => (
                         <button
                           key={qty}
                           onClick={() => setPresetQuantity(qty)}
-                          className={`py-2 rounded-lg text-sm font-medium transition-colors border ${
+                          className={`py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors border ${
                             quantity === qty 
                               ? 'bg-brand-500 border-brand-500 text-white' 
                               : 'bg-surface-800 border-surface-700 text-slate-300 hover:bg-surface-700'
@@ -193,9 +193,9 @@ export function BoxPurchaseModal({ isOpen, onClose, box }: BoxPurchaseModalProps
                 )}
               </div>
 
-              <div className="p-6 pt-0">
+              <div className="p-4 sm:p-6 pt-0 shrink-0">
                 <Button
-                  className="w-full h-12 text-base font-bold"
+                  className="w-full h-11 sm:h-12 text-sm sm:text-base font-bold"
                   onClick={handlePurchase}
                   disabled={isProcessing || !hasSufficientBalance}
                   isLoading={isProcessing}
@@ -203,7 +203,7 @@ export function BoxPurchaseModal({ isOpen, onClose, box }: BoxPurchaseModalProps
                   Confirmar Compra
                 </Button>
               </div>
-            </>
+            </div>
           ) : (
             <div className="p-8 text-center space-y-6">
               <div className="w-20 h-20 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4 relative">

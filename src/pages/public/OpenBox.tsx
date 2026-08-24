@@ -270,18 +270,18 @@ export default function OpenBox() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.1, filter: 'blur(10px)' }}
             >
-              <div className="w-48 h-48 mb-8 relative">
+              <div className="w-32 h-32 md:w-48 md:h-48 mb-8 relative">
                 <div className="absolute inset-0 bg-brand-500/20 blur-3xl rounded-full animate-pulse" />
                 {box?.image_url ? (
                   <img src={box.image_url} alt={box.name} className="w-full h-full object-contain relative z-10 animate-float" />
                 ) : (
-                  <Gift size={120} className="text-brand-400 relative z-10" />
+                  <Gift size={window.innerWidth < 768 ? 80 : 120} className="text-brand-400 relative z-10" />
                 )}
               </div>
-              <h1 className="text-4xl md:text-5xl font-display font-bold text-white mb-4 drop-shadow-lg">
+              <h1 className="text-3xl md:text-5xl font-display font-bold text-white mb-4 drop-shadow-lg">
                 Sua {box?.name}
               </h1>
-              <p className="text-slate-400 max-w-md mb-8">
+              <p className="text-slate-400 max-w-md mb-8 px-4">
                 Esta box está pronta para ser aberta. Ela contém diversos prêmios valiosos. O que será que você vai tirar?
               </p>
               <Button 

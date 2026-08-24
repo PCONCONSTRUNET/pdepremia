@@ -321,21 +321,53 @@ export default function Double() {
     let serverHash = ''
     let totalWon = 0
     let updatedBets = activeBets
+    
+    let attempt = 0;
+    let success = false;
 
-    try {
-      // Puxa o resultado criptográfico oficial da rodada
-      const { data, error } = await (supabase as any).rpc('get_double_result', { p_round_id: targetRoundId })
-      if (error) throw error
-
-      resultColor = (data as any).result_color as ColorType
-      resultNumber = (data as any).result_number
-      serverHash = (data as any).hmac_hash
-    } catch (e) {
-      console.error("Erro ao buscar resultado global:", e)
-      // Fallback em caso de falha de rede para não travar a roleta
-      const rand = Math.floor(Math.random() * 15)
-      resultNumber = rand
-      resultColor = rand === 0 ? 'white' : rand <= 7 ? 'red' : 'black'
+    // Retry loop in case the client clock is slightly ahead and the server refuses (A rodada ainda não terminou)
+    while(attempt < 6 && !success) {
+      try {
+        // Puxa o resultado criptográfico oficial da rodada
+        const { data, error } = await (supabase as any).rpc('get_double_result', { p_round_id: targetRoundId })
+        if (error) {
+          if (error.message.includes('não terminou')) {
+            await new Promise(res => setTimeout(res, 500));
+            attempt++;
+            continue;
+          }
+          throw error;
+        }
+  
+        resultColor = (data as any).result_color as ColorType
+        resultNumber = (data as any).result_number
+        serverHash = (data as any).hmac_hash
+        success = true;
+      } catch (e) {
+        console.error("Erro ao buscar resultado global (tentativa " + attempt + "):", e)
+        await new Promise(res => setTimeout(res, 500));
+        attempt++;
+      }
+    }
+    
+    if (!success) {
+      // Falha crítica. Tenta ao menos puxar info passiva para não dessincronizar de vez
+      try {
+        const { data, error } = await (supabase as any).rpc('get_double_round_info', { p_round_id: targetRoundId })
+        if (!error && data) {
+          resultColor = (data as any).result_color as ColorType
+          resultNumber = (data as any).result_number
+          serverHash = (data as any).hmac_hash
+        } else {
+          toast.error("Erro ao sincronizar rodada. Recarregue a página.");
+          setStatus('idle')
+          return;
+        }
+      } catch (e) {
+        toast.error("Erro ao sincronizar rodada. Recarregue a página.");
+        setStatus('idle')
+        return;
+      }
     }
 
     setLastResultColor(resultColor)
